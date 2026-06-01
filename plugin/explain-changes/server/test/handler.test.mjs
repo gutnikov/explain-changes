@@ -41,7 +41,7 @@ test("GET /payload returns the session payload, 404 when missing", async () => {
 
 test("POST /decision writes decision.json", async () => {
   const s = await startServer()
-  const body = JSON.stringify({ action: "commit", generalComment: "ok", fileComments: {} })
+  const body = JSON.stringify({ action: "commit", generalComment: "ok", lineComments: [] })
   const res = await fetch(`${s.base}/decision`, { method: "POST", body })
   assert.equal(res.status, 200)
   const written = JSON.parse(await readFile(path.join(s.sessionDir, "decision.json"), "utf8"))

@@ -47,7 +47,7 @@ test("serve.mjs boots, writes server-info.json, serves SPA, accepts a decision",
 
     const res = await fetch(`${info.url}/decision`, {
       method: "POST",
-      body: JSON.stringify({ action: "proceed", generalComment: "", fileComments: {} }),
+      body: JSON.stringify({ action: "proceed", generalComment: "", lineComments: [] }),
     })
     assert.equal(res.status, 200)
     const decision = JSON.parse(await readFile(path.join(sessionDir, "decision.json"), "utf8"))
