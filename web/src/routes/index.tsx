@@ -12,7 +12,7 @@ import { FileCard } from "@/components/FileCard"
 import { ActionBar } from "@/components/ActionBar"
 import { ControlsBar } from "@/components/ControlsBar"
 import { FileList } from "@/components/FileList"
-import { Textarea } from "@/components/ui/textarea"
+import { CommentBox } from "@/components/CommentBox"
 import type { DiffMode, LineAnchor } from "@/components/DiffView"
 
 export function ReviewScreen() {
@@ -39,12 +39,17 @@ export function ReviewScreen() {
     }
   }, [payload])
 
-  if (error) return <div className="p-6 text-rose-600">Failed to load: {error}</div>
-  if (!payload) return <div className="p-6 text-muted-foreground">Loading…</div>
+  if (error)
+    return <div className="flex min-h-screen items-center justify-center p-6 text-sm text-rose-500">Failed to load: {error}</div>
+  if (!payload)
+    return <div className="flex min-h-screen items-center justify-center p-6 text-sm text-muted-foreground">Loading…</div>
   if (done)
     return (
-      <div className="p-6 text-muted-foreground">
-        Decision sent: <strong>{done}</strong>. You can return to your terminal.
+      <div className="flex min-h-screen items-center justify-center p-6 text-center text-sm text-muted-foreground">
+        <div>
+          Decision sent: <strong className="text-foreground">{done}</strong>.
+          <br />You can return to your terminal.
+        </div>
       </div>
     )
 
@@ -96,16 +101,13 @@ export function ReviewScreen() {
       />
       <div className="flex">
         <FileList files={payload.files} onSelect={scrollTo} />
-        <div className="min-w-0 flex-1 p-4">
+        <div className="mx-auto min-w-0 max-w-5xl flex-1 p-4">
           <section className="mb-4 rounded-md border p-4">
             <Explanation markdown={payload.explanation} />
           </section>
-          <Textarea
-            className="mb-4"
-            placeholder="Leave a general comment…"
-            value={general}
-            onChange={(e) => setGeneral(e.target.value)}
-          />
+          <div className="mb-4">
+            <CommentBox value={general} onChange={setGeneral} placeholder="Leave a general comment…" />
+          </div>
           {payload.files.map((f) => (
             <FileCard
               key={f.path}
