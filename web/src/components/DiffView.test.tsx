@@ -49,7 +49,7 @@ describe("DiffView", () => {
     const comment: LineComment = { file: "a.ts", side: "new", line: 2, code: "+new", body: "existing note" }
     render(<DiffView {...base} comments={[comment]} onRemoveComment={onRemoveComment} mode="unified" />)
     expect(screen.getByText("existing note")).toBeInTheDocument()
-    fireEvent.click(screen.getByLabelText("remove comment"))
+    fireEvent.click(screen.getByLabelText("remove comment on new line 2"))
     expect(onRemoveComment).toHaveBeenCalledWith(comment)
   })
 
@@ -60,5 +60,14 @@ describe("DiffView", () => {
     fireEvent.change(screen.getByPlaceholderText("Leave a comment…"), { target: { value: "ctx note" } })
     fireEvent.click(screen.getByRole("button", { name: "Comment" }))
     expect(onAddComment).toHaveBeenCalledWith({ side: "new", line: 1 }, " keep", "ctx note")
+  })
+
+  it("adds a comment in split mode on the right (new) side", () => {
+    const onAddComment = vi.fn()
+    render(<DiffView {...base} onAddComment={onAddComment} mode="split" />)
+    fireEvent.click(screen.getByLabelText("comment on new line 2"))
+    fireEvent.change(screen.getByPlaceholderText("Leave a comment…"), { target: { value: "split note" } })
+    fireEvent.click(screen.getByRole("button", { name: "Comment" }))
+    expect(onAddComment).toHaveBeenCalledWith({ side: "new", line: 2 }, "+new", "split note")
   })
 })

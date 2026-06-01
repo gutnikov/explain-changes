@@ -48,7 +48,9 @@ export function DiffView({
     setDraft("")
   }
 
-  const Plus = ({ anchor }: { anchor: LineAnchor }) => (
+  // Plain render helpers (NOT components): calling them inlines their JSX into
+  // DiffView's own tree, so the editor textarea is never remounted on keystroke.
+  const renderPlus = (anchor: LineAnchor) => (
     <button
       aria-label={`comment on ${anchor.side} line ${anchor.line}`}
       className="w-4 select-none text-primary opacity-0 group-hover:opacity-100"
@@ -58,16 +60,20 @@ export function DiffView({
     </button>
   )
 
-  const Below = ({ anchor, code }: { anchor: LineAnchor; code: string }) => {
+  const renderBelow = (anchor: LineAnchor, code: string) => {
     const mine = comments.filter((c) => c.side === anchor.side && c.line === anchor.line)
     const isOpen = openKey === keyOf(anchor)
     if (mine.length === 0 && !isOpen) return null
     return (
       <div className="border-y bg-muted/30 px-2 py-1" data-comment-area>
         {mine.map((c, i) => (
-          <div key={i} className="flex items-start justify-between gap-2 py-0.5 text-xs" data-comment>
+          <div key={`${c.side}:${c.line}:${i}`} className="flex items-start justify-between gap-2 py-0.5 text-xs" data-comment>
             <span className="whitespace-pre-wrap">{c.body}</span>
-            <button aria-label="remove comment" className="text-muted-foreground hover:text-rose-600" onClick={() => onRemoveComment(c)}>
+            <button
+              aria-label={`remove comment on ${c.side} line ${c.line}`}
+              className="text-muted-foreground hover:text-rose-600"
+              onClick={() => onRemoveComment(c)}
+            >
               ×
             </button>
           </div>
@@ -81,6 +87,9 @@ export function DiffView({
               placeholder="Leave a comment…"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setOpenKey(null)
+              }}
             />
             <div className="mt-1 flex gap-2">
               <button className="rounded-md bg-primary px-2 py-0.5 text-xs text-primary-foreground" onClick={() => submit(anchor, code)}>
@@ -108,12 +117,12 @@ export function DiffView({
                 return (
                   <div key={i}>
                     <div className={cn("group flex whitespace-pre px-2", bg[r.type])}>
-                      <Plus anchor={anchor} />
+                      {renderPlus(anchor)}
                       <Gutter n={r.oldNo} />
                       <Gutter n={r.newNo} />
                       <code className="flex-1">{r.content}</code>
                     </div>
-                    <Below anchor={anchor} code={r.content} />
+                    {renderBelow(anchor, r.content)}
                   </div>
                 )
               })
@@ -124,18 +133,18 @@ export function DiffView({
                   <div key={i}>
                     <div className="flex whitespace-pre">
                       <div data-side="left" className={cn("group flex w-1/2 px-2", r.left ? bg[r.left.type] : "")}>
-                        {leftAnchor ? <Plus anchor={leftAnchor} /> : <span className="w-4" />}
+                        {leftAnchor ? renderPlus(leftAnchor) : <span className="w-4" />}
                         <Gutter n={r.left?.no ?? null} />
                         <code className="flex-1">{r.left?.content ?? ""}</code>
                       </div>
                       <div data-side="right" className={cn("group flex w-1/2 border-l px-2", r.right ? bg[r.right.type] : "")}>
-                        {rightAnchor ? <Plus anchor={rightAnchor} /> : <span className="w-4" />}
+                        {rightAnchor ? renderPlus(rightAnchor) : <span className="w-4" />}
                         <Gutter n={r.right?.no ?? null} />
                         <code className="flex-1">{r.right?.content ?? ""}</code>
                       </div>
                     </div>
-                    {leftAnchor && <Below anchor={leftAnchor} code={r.left!.content} />}
-                    {rightAnchor && <Below anchor={rightAnchor} code={r.right!.content} />}
+                    {leftAnchor && renderBelow(leftAnchor, r.left!.content)}
+                    {rightAnchor && renderBelow(rightAnchor, r.right!.content)}
                   </div>
                 )
               })}
