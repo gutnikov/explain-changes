@@ -15,15 +15,18 @@ describe("api", () => {
     const spy = vi.fn(async () => new Response(JSON.stringify({ ok: true })))
     vi.stubGlobal("fetch", spy)
     await postDecision({ action: "commit", generalComment: "hi", fileComments: { "a.ts": "c" } })
-    const [url, init] = spy.mock.calls[0]
+    expect(spy.mock.calls.length).toBeGreaterThan(0)
+    const [url, init] = spy.mock.calls[0] as unknown as [string, { method: string; body: string }]
     expect(url).toBe("/decision")
     expect(init.method).toBe("POST")
     expect(JSON.parse(init.body).action).toBe("commit")
   })
 
   it("fetchHistory returns the entry array", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify([{ branch: "b", commit: "c", date: "d", files: [], additions: 0, deletions: 0, markdown: "m" }]))))
+    const spy = vi.fn(async () => new Response(JSON.stringify([{ branch: "b", commit: "c", date: "d", files: [], additions: 0, deletions: 0, markdown: "m" }])))
+    vi.stubGlobal("fetch", spy)
     const h = await fetchHistory()
+    expect(spy).toHaveBeenCalledWith("/api/history")
     expect(h[0].commit).toBe("c")
   })
 })
