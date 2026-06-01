@@ -1,0 +1,15 @@
+{
+  "name": "explain-changes",
+  "version": "0.1.0",
+  "description": "Review a coding agent's uncommitted changes in a GitHub-PR-style web UI; save an explanation per commit (Codex).",
+  "author": { "name": "Alex Gutnikov", "url": "https://github.com/gutnikov" },
+  "license": "MIT",
+  "keywords": ["codex", "claude-code", "code-review", "diff", "agents"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "explain-changes",
+    "shortDescription": "Review the agent's uncommitted changes in a GitHub-style UI.",
+    "category": "Coding",
+    "capabilities": ["Interactive", "Read", "Write"]
+  }
+}
