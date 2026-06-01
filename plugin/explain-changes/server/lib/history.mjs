@@ -37,7 +37,7 @@ export async function readHistory(projectRoot) {
       }
       const { data, body } = parseFrontmatter(md)
       entries.push({
-        branch: b.name,
+        branch: data.branch ?? b.name,
         commit: String(data.commit ?? path.basename(f, ".md")),
         date: data.date ?? (await stat(full)).mtime.toISOString(),
         files: data.files ?? [],

@@ -40,7 +40,11 @@ async function main() {
     date: new Date().toISOString(),
   })
 
-  const outDir = path.join(projectRoot, ".explain-changes", payload.branch)
+  // Branch names can contain "/"; flatten to a single directory segment so the
+  // history reader (which scans one level deep) can find the file. The real
+  // branch name is preserved in the markdown frontmatter.
+  const branchDirName = payload.branch.replace(/\//g, "-")
+  const outDir = path.join(projectRoot, ".explain-changes", branchDirName)
   await mkdir(outDir, { recursive: true })
   const outFile = path.join(outDir, `${commit}.md`)
   await writeFile(outFile, md, "utf8")

@@ -81,3 +81,17 @@ test("falls back to file mtime when date frontmatter is absent", async () => {
   assert.equal(entries.length, 1)
   assert.match(entries[0].date, /^\d{4}-\d{2}-\d{2}T/)
 })
+
+test("reports branch from frontmatter (handles flattened slashed branch dirs)", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "ec-hist-slash-"))
+  const dir = path.join(root, ".explain-changes", "feature-x") // flattened on disk
+  await mkdir(dir, { recursive: true })
+  await writeFile(
+    path.join(dir, "abc123.md"),
+    ["---", "commit: abc123", "branch: feature/x", "date: 2026-06-01T00:00:00Z", "---", "body"].join("\n"),
+    "utf8",
+  )
+  const entries = await readHistory(root)
+  assert.equal(entries.length, 1)
+  assert.equal(entries[0].branch, "feature/x") // real name from frontmatter, not dir name
+})
