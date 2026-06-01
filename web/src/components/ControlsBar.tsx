@@ -1,5 +1,6 @@
 import type { DiffMode } from "./DiffView"
 import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "./SegmentedControl"
 import { ThemeToggle } from "./ThemeToggle"
 
 export function ControlsBar({
@@ -14,23 +15,25 @@ export function ControlsBar({
   onCollapseAll: () => void
 }) {
   return (
-    <div className="flex items-center justify-between border-b px-4 py-2 text-xs text-muted-foreground">
-      <div className="flex gap-2">
-        <Button size="sm" variant="outline" onClick={onExpandAll}>
+    <div className="flex items-center justify-between border-b px-4 py-1.5 text-xs text-muted-foreground">
+      <div className="flex items-center gap-1">
+        <Button size="xs" variant="ghost" onClick={onExpandAll}>
           Expand all
         </Button>
-        <Button size="sm" variant="outline" onClick={onCollapseAll}>
+        <Button size="xs" variant="ghost" onClick={onCollapseAll}>
           Collapse all
         </Button>
       </div>
       <div className="flex items-center gap-2">
-        <span>default:</span>
-        <Button size="sm" variant={defaultMode === "unified" ? "default" : "outline"} onClick={() => onSetDefaultMode("unified")}>
-          Unified
-        </Button>
-        <Button size="sm" variant={defaultMode === "split" ? "default" : "outline"} onClick={() => onSetDefaultMode("split")}>
-          Split
-        </Button>
+        <span>Default view</span>
+        <SegmentedControl
+          options={[
+            { value: "unified", label: "Unified" },
+            { value: "split", label: "Split" },
+          ]}
+          value={defaultMode}
+          onChange={onSetDefaultMode}
+        />
         <ThemeToggle />
       </div>
     </div>
