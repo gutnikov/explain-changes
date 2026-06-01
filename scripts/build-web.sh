@@ -7,9 +7,14 @@ here="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$here/web"
 pnpm install --frozen-lockfile
 pnpm build
-# $here is always an absolute path (cd && pwd), so $dest is never empty or "/".
-dest="$here/plugin/explain-changes/server/web_dist"
-rm -rf "$dest"
-mkdir -p "$dest"
-cp -R "$here/web/dist/." "$dest/"
-echo "Copied web/dist -> $dest"
+# Copy the built bundle into BOTH the Claude Code plugin and the Codex mirror so
+# they never drift. $here is always an absolute path (cd && pwd), so each $dest is
+# never empty or "/".
+for dest in \
+  "$here/plugin/explain-changes/server/web_dist" \
+  "$here/plugins/explain-changes/server/web_dist"; do
+  rm -rf "$dest"
+  mkdir -p "$dest"
+  cp -R "$here/web/dist/." "$dest/"
+  echo "Copied web/dist -> $dest"
+done
