@@ -20,7 +20,7 @@ export function parseFrontmatter(markdown) {
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean)
-    } else if (/^-?\d+$/.test(value)) {
+    } else if (/^-?\d+$/.test(value) && String(Number(value)) === value) {
       value = Number(value)
     }
     data[key] = value

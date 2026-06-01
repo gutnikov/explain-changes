@@ -36,3 +36,11 @@ test("parses frontmatter with no trailing newline and empty body", () => {
   assert.equal(data.commit, "abc")
   assert.equal(body, "")
 })
+
+test("preserves numeric-looking values with leading zeros as strings", () => {
+  const md = ["---", "commit: 0234567", "additions: 5", "n: 0", "---", "body"].join("\n")
+  const { data } = parseFrontmatter(md)
+  assert.equal(data.commit, "0234567") // string, leading zero kept
+  assert.equal(data.additions, 5) // still a number
+  assert.equal(data.n, 0) // plain zero still a number
+})
