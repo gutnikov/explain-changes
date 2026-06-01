@@ -33,7 +33,7 @@ test("build-payload -> decision -> commit -> save-explanation produces <hash>.md
   execFileSync(process.execPath, [buildPayload, "--session-dir", sessionDir, "--project-root", dir, "--explanation-file", explFile], { stdio: "pipe" })
 
   // 2. simulate the browser writing a commit decision
-  await writeFile(path.join(sessionDir, "decision.json"), JSON.stringify({ action: "commit", generalComment: "lgtm", fileComments: {} }), "utf8")
+  await writeFile(path.join(sessionDir, "decision.json"), JSON.stringify({ action: "commit", generalComment: "lgtm", lineComments: [{ file: "a.ts", side: "new", line: 2, code: "+two", body: "check this" }] }), "utf8")
 
   // 3. agent commits
   git(dir, "add", "-A")
@@ -49,5 +49,6 @@ test("build-payload -> decision -> commit -> save-explanation produces <hash>.md
   const md = await readFile(mdPath, "utf8")
   assert.match(md, /Added a second line/)
   assert.match(md, /> general: lgtm/)
+  assert.match(md, /- L2: check this/)
   assert.match(md, new RegExp(`commit: ${hash}`))
 })
