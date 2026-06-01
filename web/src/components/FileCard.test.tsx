@@ -25,7 +25,8 @@ const base = {
 describe("FileCard", () => {
   it("shows the path, status pill, and counts", () => {
     render(<FileCard {...base} />)
-    expect(screen.getByText("src/a.ts")).toBeInTheDocument()
+    expect(screen.getByText("a.ts")).toBeInTheDocument()
+    expect(screen.getByText("src/")).toBeInTheDocument()
     expect(screen.getByText("modified")).toBeInTheDocument()
     expect(screen.getByText("+2")).toBeInTheDocument()
   })
