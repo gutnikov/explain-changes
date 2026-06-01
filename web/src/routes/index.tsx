@@ -5,20 +5,24 @@ import {
   postDecision,
   type DecisionAction,
   type Payload,
+  type LineComment,
 } from "@/lib/api"
 import { Explanation } from "@/components/Explanation"
 import { FileCard } from "@/components/FileCard"
 import { ActionBar } from "@/components/ActionBar"
+import { ControlsBar } from "@/components/ControlsBar"
+import { FileList } from "@/components/FileList"
 import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import type { DiffMode } from "@/components/DiffView"
+import type { DiffMode, LineAnchor } from "@/components/DiffView"
 
 export function ReviewScreen() {
   const [payload, setPayload] = useState<Payload | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [general, setGeneral] = useState("")
-  const [fileComments, setFileComments] = useState<Record<string, string>>({})
-  const [mode, setMode] = useState<DiffMode>("unified")
+  const [lineComments, setLineComments] = useState<LineComment[]>([])
+  const [defaultMode, setDefaultMode] = useState<DiffMode>("unified")
+  const [fileModes, setFileModes] = useState<Record<string, DiffMode>>({})
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState<DecisionAction | null>(null)
 
@@ -44,10 +48,28 @@ export function ReviewScreen() {
       </div>
     )
 
+  const hasComments = general.trim() !== "" || lineComments.length > 0
+
+  const addLineComment = (file: string, anchor: LineAnchor, code: string, body: string) =>
+    setLineComments((cs) => [...cs, { file, side: anchor.side, line: anchor.line, code, body }])
+  const removeLineComment = (comment: LineComment) => setLineComments((cs) => cs.filter((c) => c !== comment))
+
+  const expandAll = () => setCollapsed(new Set())
+  const collapseAll = () => setCollapsed(new Set(payload.files.map((f) => f.path)))
+  const toggleCollapse = (path: string) =>
+    setCollapsed((s) => {
+      const next = new Set(s)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
+      return next
+    })
+  const scrollTo = (path: string) =>
+    document.getElementById(`file-${path}`)?.scrollIntoView({ behavior: "smooth" })
+
   const submit = async (action: DecisionAction) => {
     setBusy(true)
     try {
-      await postDecision({ action, generalComment: general, fileComments })
+      await postDecision({ action, generalComment: general, lineComments })
       setDone(action)
     } catch (e) {
       setError(String(e))
@@ -63,35 +85,41 @@ export function ReviewScreen() {
         additions={totals.additions}
         deletions={totals.deletions}
         busy={busy}
+        hasComments={hasComments}
         onAction={submit}
       />
-      <div className="mx-auto max-w-5xl p-4">
-        <section className="mb-4 rounded-md border p-4">
-          <Explanation markdown={payload.explanation} />
-        </section>
-        <Textarea
-          className="mb-4"
-          placeholder="Leave a general comment…"
-          value={general}
-          onChange={(e) => setGeneral(e.target.value)}
-        />
-        <div className="mb-3 flex gap-2">
-          <Button size="sm" variant={mode === "unified" ? "default" : "outline"} onClick={() => setMode("unified")}>
-            Unified
-          </Button>
-          <Button size="sm" variant={mode === "split" ? "default" : "outline"} onClick={() => setMode("split")}>
-            Split
-          </Button>
-        </div>
-        {payload.files.map((f) => (
-          <FileCard
-            key={f.path}
-            file={f}
-            mode={mode}
-            comment={fileComments[f.path] ?? ""}
-            onComment={(v) => setFileComments((c) => ({ ...c, [f.path]: v }))}
+      <ControlsBar
+        defaultMode={defaultMode}
+        onSetDefaultMode={setDefaultMode}
+        onExpandAll={expandAll}
+        onCollapseAll={collapseAll}
+      />
+      <div className="flex">
+        <FileList files={payload.files} onSelect={scrollTo} />
+        <div className="min-w-0 flex-1 p-4">
+          <section className="mb-4 rounded-md border p-4">
+            <Explanation markdown={payload.explanation} />
+          </section>
+          <Textarea
+            className="mb-4"
+            placeholder="Leave a general comment…"
+            value={general}
+            onChange={(e) => setGeneral(e.target.value)}
           />
-        ))}
+          {payload.files.map((f) => (
+            <FileCard
+              key={f.path}
+              file={f}
+              mode={fileModes[f.path] ?? defaultMode}
+              onSetMode={(m) => setFileModes((fm) => ({ ...fm, [f.path]: m }))}
+              collapsed={collapsed.has(f.path)}
+              onToggleCollapse={() => toggleCollapse(f.path)}
+              comments={lineComments.filter((c) => c.file === f.path)}
+              onAddComment={(anchor, code, body) => addLineComment(f.path, anchor, code, body)}
+              onRemoveComment={removeLineComment}
+            />
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -24,22 +24,37 @@ beforeEach(() => {
 })
 
 describe("ReviewScreen", () => {
-  it("loads payload and renders explanation + file + actions", async () => {
+  it("loads payload and renders sidebar + explanation + file + actions", async () => {
     render(<ReviewScreen />)
     expect(await screen.findByText("feature/x")).toBeInTheDocument()
     expect(screen.getByText("because")).toBeInTheDocument()
-    expect(screen.getByText("a.ts")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /commit & proceed/i })).toBeInTheDocument()
+    expect(screen.getByText("Files changed")).toBeInTheDocument()
+    expect(screen.getAllByText("a.ts").length).toBeGreaterThanOrEqual(1)
   })
 
-  it("posts the decision with comments on commit", async () => {
+  it("commits with empty comments when none are entered", async () => {
+    render(<ReviewScreen />)
+    await screen.findByText("feature/x")
+    fireEvent.click(screen.getByRole("button", { name: /commit & proceed/i }))
+    await waitFor(() =>
+      expect(api.postDecision).toHaveBeenCalledWith({
+        action: "commit",
+        generalComment: "",
+        lineComments: [],
+      }),
+    )
+  })
+
+  it("disables Proceed/Commit once a general comment is entered, and Request changes posts", async () => {
     render(<ReviewScreen />)
     await screen.findByText("feature/x")
     fireEvent.change(screen.getByPlaceholderText(/leave a general comment/i), { target: { value: "ship it" } })
-    fireEvent.click(screen.getByRole("button", { name: /commit & proceed/i }))
+    expect(screen.getByRole("button", { name: /^proceed$/i })).toBeDisabled()
+    expect(screen.getByRole("button", { name: /commit & proceed/i })).toBeDisabled()
+    fireEvent.click(screen.getByRole("button", { name: /request changes/i }))
     await waitFor(() =>
       expect(api.postDecision).toHaveBeenCalledWith(
-        expect.objectContaining({ action: "commit", generalComment: "ship it" }),
+        expect.objectContaining({ action: "request_changes", generalComment: "ship it" }),
       ),
     )
   })
