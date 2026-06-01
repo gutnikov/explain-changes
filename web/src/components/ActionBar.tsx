@@ -7,6 +7,7 @@ export function ActionBar({
   additions,
   deletions,
   busy,
+  hasComments,
   onAction,
 }: {
   branch: string
@@ -14,6 +15,7 @@ export function ActionBar({
   additions: number
   deletions: number
   busy: boolean
+  hasComments: boolean
   onAction: (a: DecisionAction) => void
 }) {
   return (
@@ -29,10 +31,10 @@ export function ActionBar({
         <Button variant="outline" disabled={busy} onClick={() => onAction("request_changes")}>
           Request changes
         </Button>
-        <Button variant="secondary" disabled={busy} onClick={() => onAction("proceed")}>
+        <Button variant="secondary" disabled={busy || hasComments} onClick={() => onAction("proceed")}>
           Proceed
         </Button>
-        <Button disabled={busy} onClick={() => onAction("commit")}>
+        <Button disabled={busy || hasComments} onClick={() => onAction("commit")}>
           Commit &amp; proceed
         </Button>
       </div>
