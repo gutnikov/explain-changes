@@ -52,12 +52,16 @@ in a GitHub-PR-style web UI — then act on their decision.
    node "${CLAUDE_PLUGIN_ROOT}/server/serve.mjs" \
      --session-dir "$SESSION" --project-root "$PWD" >/dev/null 2>&1 &
    ```
-   Read the URL from `"$SESSION/server-info.json"` and tell the user to open it.
+   The server writes `"$SESSION/server-info.json"` shortly after starting. Wait for that
+   file to exist (re-check every ~0.5s for a few seconds), then read the `url` from it
+   and tell the user to open it.
 
 5. **Wait for the decision.** Poll for `"$SESSION/decision.json"` (re-check every few
-   seconds; stop if the user cancels). Read its `action`:
+   seconds). If the user interrupts in the conversation — asks to stop or starts a new
+   request — abandon the wait immediately. Otherwise read its `action`:
 
-   - **`commit`**: derive a concise commit message from your explanation, then:
+   - **`commit`**: derive a commit message from your explanation (one concise line,
+     imperative mood), then:
      ```bash
      git add -A && git commit -m "<message>"
      HASH="$(git rev-parse HEAD)"
@@ -70,6 +74,8 @@ in a GitHub-PR-style web UI — then act on their decision.
    - **`request_changes`**: apply `generalComment` and each `fileComments[path]` as
      real edits to the code. Then **start over from step 1** with a fresh session
      (re-gather, re-explain, re-open the UI) so the user re-reviews the updated diff.
+     If you've applied the requested changes and cannot make further progress, surface
+     that to the user instead of looping again.
 
    - **`proceed`**: stop the server and continue the session. Save nothing.
 
@@ -99,5 +105,7 @@ At each user-defined checkpoint trigger:
 
 - Session dirs live under `.explain-changes/.session/` and are gitignored; the
   persisted records are `.explain-changes/<branch>/<hash>.md`, written only on commit.
-- The server auto-exits after inactivity, but always kill it explicitly when done.
+- Stop the background server by reading the `pid` field from `"$SESSION/server-info.json"`
+  and running `kill <pid>` (the server also self-exits after inactivity, but always stop
+  it explicitly once you've acted).
 - Never commit on `request_changes` or `proceed`.
