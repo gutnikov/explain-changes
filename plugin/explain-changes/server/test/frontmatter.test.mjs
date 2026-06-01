@@ -29,3 +29,10 @@ test("returns empty data and full body when no frontmatter", () => {
   assert.deepEqual(data, {})
   assert.equal(body, "no fm here")
 })
+
+test("parses frontmatter with no trailing newline and empty body", () => {
+  const md = ["---", "commit: abc", "---"].join("\n")
+  const { data, body } = parseFrontmatter(md)
+  assert.equal(data.commit, "abc")
+  assert.equal(body, "")
+})

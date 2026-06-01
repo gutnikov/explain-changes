@@ -4,7 +4,7 @@
  * Returns { data, body }.
  */
 export function parseFrontmatter(markdown) {
-  const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(markdown)
+  const match = /^---\n([\s\S]*?)\n---(?:\n|$)([\s\S]*)$/.exec(markdown)
   if (!match) return { data: {}, body: markdown }
 
   const [, raw, rest] = match
