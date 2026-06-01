@@ -25,8 +25,8 @@ const base = { file, comments: [] as LineComment[], onAddComment: noop, onRemove
 describe("DiffView", () => {
   it("renders unified rows by default", () => {
     render(<DiffView {...base} mode="unified" />)
-    expect(screen.getByText("-old")).toBeInTheDocument()
-    expect(screen.getByText("+new")).toBeInTheDocument()
+    expect(screen.getByText("old")).toBeInTheDocument()
+    expect(screen.getByText("new")).toBeInTheDocument()
   })
 
   it("renders two columns in split mode", () => {

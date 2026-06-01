@@ -33,9 +33,9 @@ describe("FileCard", () => {
 
   it("hides the diff when collapsed", () => {
     const { rerender } = render(<FileCard {...base} collapsed={false} />)
-    expect(screen.getByText("+x")).toBeInTheDocument()
+    expect(screen.getByText("x")).toBeInTheDocument()
     rerender(<FileCard {...base} collapsed={true} />)
-    expect(screen.queryByText("+x")).not.toBeInTheDocument()
+    expect(screen.queryByText("x")).not.toBeInTheDocument()
   })
 
   it("fires onSetMode from the per-file toggle", () => {
