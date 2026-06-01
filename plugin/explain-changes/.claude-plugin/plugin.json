@@ -7,5 +7,6 @@
     "url": "https://github.com/gutnikov"
   },
   "license": "MIT",
-  "keywords": ["claude-code", "codex", "code-review", "diff", "agents"]
+  "keywords": ["claude-code", "codex", "code-review", "diff", "agents"],
+  "skills": "./skills/"
 }
