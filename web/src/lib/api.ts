@@ -23,10 +23,18 @@ export interface Payload {
 }
 
 export type DecisionAction = "commit" | "request_changes" | "proceed"
+export type CommentSide = "old" | "new"
+export interface LineComment {
+  file: string
+  side: CommentSide
+  line: number
+  code: string
+  body: string
+}
 export interface Decision {
   action: DecisionAction
   generalComment: string
-  fileComments: Record<string, string>
+  lineComments: LineComment[]
 }
 
 export interface HistoryEntry {

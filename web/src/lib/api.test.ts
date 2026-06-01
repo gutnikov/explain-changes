@@ -14,12 +14,20 @@ describe("api", () => {
   it("postDecision POSTs JSON to /decision", async () => {
     const spy = vi.fn(async () => new Response(JSON.stringify({ ok: true })))
     vi.stubGlobal("fetch", spy)
-    await postDecision({ action: "commit", generalComment: "hi", fileComments: { "a.ts": "c" } })
-    expect(spy.mock.calls.length).toBeGreaterThan(0)
-    const [url, init] = spy.mock.calls[0] as unknown as [string, { method: string; body: string }]
+    await postDecision({
+      action: "commit",
+      generalComment: "hi",
+      lineComments: [{ file: "a.ts", side: "new", line: 1, code: "+x", body: "c" }],
+    })
+    const call = spy.mock.calls[0] as unknown as [string, { method: string; body: string }]
+    expect(call).toBeDefined()
+    const [url, init] = call
     expect(url).toBe("/decision")
     expect(init.method).toBe("POST")
-    expect(JSON.parse(init.body).action).toBe("commit")
+    const sent = JSON.parse(init.body as string)
+    expect(sent.action).toBe("commit")
+    expect(sent.lineComments).toHaveLength(1)
+    expect(sent.lineComments[0].line).toBe(1)
   })
 
   it("fetchHistory returns the entry array", async () => {
