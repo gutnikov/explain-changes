@@ -38,18 +38,27 @@ describe("DiffView", () => {
   it("opens an editor on a line and emits onAddComment with the anchor + code", () => {
     const onAddComment = vi.fn()
     render(<DiffView {...base} onAddComment={onAddComment} mode="unified" />)
-    fireEvent.click(screen.getByLabelText("comment on new line 1"))
+    fireEvent.click(screen.getByLabelText("comment on new line 2"))
     fireEvent.change(screen.getByPlaceholderText("Leave a comment…"), { target: { value: "needs work" } })
     fireEvent.click(screen.getByRole("button", { name: "Comment" }))
-    expect(onAddComment).toHaveBeenCalledWith({ side: "new", line: 1 }, "+new", "needs work")
+    expect(onAddComment).toHaveBeenCalledWith({ side: "new", line: 2 }, "+new", "needs work")
   })
 
   it("renders an existing comment inline and removes it", () => {
     const onRemoveComment = vi.fn()
-    const comment: LineComment = { file: "a.ts", side: "new", line: 1, code: "+new", body: "existing note" }
+    const comment: LineComment = { file: "a.ts", side: "new", line: 2, code: "+new", body: "existing note" }
     render(<DiffView {...base} comments={[comment]} onRemoveComment={onRemoveComment} mode="unified" />)
     expect(screen.getByText("existing note")).toBeInTheDocument()
     fireEvent.click(screen.getByLabelText("remove comment"))
     expect(onRemoveComment).toHaveBeenCalledWith(comment)
+  })
+
+  it("anchors a context line to the new side (line 1) with its real code", () => {
+    const onAddComment = vi.fn()
+    render(<DiffView {...base} onAddComment={onAddComment} mode="unified" />)
+    fireEvent.click(screen.getByLabelText("comment on new line 1"))
+    fireEvent.change(screen.getByPlaceholderText("Leave a comment…"), { target: { value: "ctx note" } })
+    fireEvent.click(screen.getByRole("button", { name: "Comment" }))
+    expect(onAddComment).toHaveBeenCalledWith({ side: "new", line: 1 }, " keep", "ctx note")
   })
 })

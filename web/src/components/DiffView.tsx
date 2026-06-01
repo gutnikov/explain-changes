@@ -98,70 +98,49 @@ export function DiffView({
 
   return (
     <div className="overflow-x-auto font-mono text-xs leading-6">
-      {file.hunks.map((hunk, hi) => {
-        const unifiedRows = toUnifiedRows(hunk)
-        const splitRows = toSplitRows(hunk)
-
-        // Build sequential 1-based line numbers per side for add/del rows only.
-        // Context lines don't receive comment buttons (no anchor).
-        let addSeq = 0
-        let delSeq = 0
-        const unifiedAnchors: (LineAnchor | null)[] = unifiedRows.map((r) => {
-          if (r.type === "add") {
-            addSeq++
-            return { side: "new" as CommentSide, line: addSeq }
-          } else if (r.type === "del") {
-            delSeq++
-            return { side: "old" as CommentSide, line: delSeq }
-          } else {
-            // context: no comment button
-            return null
-          }
-        })
-
-        return (
-          <div key={hi}>
-            <div className="bg-muted px-2 py-1 text-muted-foreground">{hunk.header}</div>
-            {mode === "unified"
-              ? unifiedRows.map((r, i) => {
-                  const anchor = unifiedAnchors[i]
-                  return (
-                    <div key={i}>
-                      <div className={cn("group flex whitespace-pre px-2", bg[r.type])}>
-                        {anchor ? <Plus anchor={anchor} /> : <span className="w-4" />}
-                        <Gutter n={r.oldNo} />
-                        <Gutter n={r.newNo} />
-                        <code className="flex-1">{r.content}</code>
-                      </div>
-                      {anchor && <Below anchor={anchor} code={r.content} />}
+      {file.hunks.map((hunk, hi) => (
+        <div key={hi}>
+          <div className="bg-muted px-2 py-1 text-muted-foreground">{hunk.header}</div>
+          {mode === "unified"
+            ? toUnifiedRows(hunk).map((r, i) => {
+                const anchor: LineAnchor =
+                  r.type === "del" ? { side: "old", line: r.oldNo! } : { side: "new", line: r.newNo! }
+                return (
+                  <div key={i}>
+                    <div className={cn("group flex whitespace-pre px-2", bg[r.type])}>
+                      <Plus anchor={anchor} />
+                      <Gutter n={r.oldNo} />
+                      <Gutter n={r.newNo} />
+                      <code className="flex-1">{r.content}</code>
                     </div>
-                  )
-                })
-              : splitRows.map((r, i) => {
-                  const leftAnchor: LineAnchor | null = r.left ? { side: "old", line: r.left.no } : null
-                  const rightAnchor: LineAnchor | null = r.right ? { side: "new", line: r.right.no } : null
-                  return (
-                    <div key={i}>
-                      <div className="flex whitespace-pre">
-                        <div data-side="left" className={cn("group flex w-1/2 px-2", r.left ? bg[r.left.type] : "")}>
-                          {leftAnchor ? <Plus anchor={leftAnchor} /> : <span className="w-4" />}
-                          <Gutter n={r.left?.no ?? null} />
-                          <code className="flex-1">{r.left?.content ?? ""}</code>
-                        </div>
-                        <div data-side="right" className={cn("group flex w-1/2 border-l px-2", r.right ? bg[r.right.type] : "")}>
-                          {rightAnchor ? <Plus anchor={rightAnchor} /> : <span className="w-4" />}
-                          <Gutter n={r.right?.no ?? null} />
-                          <code className="flex-1">{r.right?.content ?? ""}</code>
-                        </div>
+                    <Below anchor={anchor} code={r.content} />
+                  </div>
+                )
+              })
+            : toSplitRows(hunk).map((r, i) => {
+                const leftAnchor: LineAnchor | null = r.left ? { side: "old", line: r.left.no } : null
+                const rightAnchor: LineAnchor | null = r.right ? { side: "new", line: r.right.no } : null
+                return (
+                  <div key={i}>
+                    <div className="flex whitespace-pre">
+                      <div data-side="left" className={cn("group flex w-1/2 px-2", r.left ? bg[r.left.type] : "")}>
+                        {leftAnchor ? <Plus anchor={leftAnchor} /> : <span className="w-4" />}
+                        <Gutter n={r.left?.no ?? null} />
+                        <code className="flex-1">{r.left?.content ?? ""}</code>
                       </div>
-                      {leftAnchor && <Below anchor={leftAnchor} code={r.left!.content} />}
-                      {rightAnchor && <Below anchor={rightAnchor} code={r.right!.content} />}
+                      <div data-side="right" className={cn("group flex w-1/2 border-l px-2", r.right ? bg[r.right.type] : "")}>
+                        {rightAnchor ? <Plus anchor={rightAnchor} /> : <span className="w-4" />}
+                        <Gutter n={r.right?.no ?? null} />
+                        <code className="flex-1">{r.right?.content ?? ""}</code>
+                      </div>
                     </div>
-                  )
-                })}
-          </div>
-        )
-      })}
+                    {leftAnchor && <Below anchor={leftAnchor} code={r.left!.content} />}
+                    {rightAnchor && <Below anchor={rightAnchor} code={r.right!.content} />}
+                  </div>
+                )
+              })}
+        </div>
+      ))}
     </div>
   )
 }
