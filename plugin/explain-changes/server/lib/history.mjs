@@ -29,13 +29,17 @@ export async function readHistory(projectRoot) {
     for (const f of files) {
       if (!f.endsWith(".md")) continue
       const full = path.join(branchDir, f)
-      const md = await readFile(full, "utf8")
+      let md
+      try {
+        md = await readFile(full, "utf8")
+      } catch {
+        continue
+      }
       const { data, body } = parseFrontmatter(md)
-      const s = await stat(full)
       entries.push({
         branch: b.name,
         commit: String(data.commit ?? path.basename(f, ".md")),
-        date: data.date ?? s.mtime.toISOString(),
+        date: data.date ?? (await stat(full)).mtime.toISOString(),
         files: data.files ?? [],
         additions: data.additions ?? 0,
         deletions: data.deletions ?? 0,

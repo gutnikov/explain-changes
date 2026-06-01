@@ -52,3 +52,32 @@ test("returns [] when .explain-changes is absent", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "ec-empty-"))
   assert.deepEqual(await readHistory(root), [])
 })
+
+test("ignores non-.md files in a branch dir", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "ec-hist-nonmd-"))
+  const branchDir = path.join(root, ".explain-changes", "b")
+  await mkdir(branchDir, { recursive: true })
+  await writeFile(path.join(branchDir, "notes.txt"), "not markdown", "utf8")
+  await writeFile(
+    path.join(branchDir, "abc.md"),
+    ["---", "commit: abc", "date: 2026-06-01T00:00:00Z", "---", "x"].join("\n"),
+    "utf8",
+  )
+  const entries = await readHistory(root)
+  assert.equal(entries.length, 1)
+  assert.equal(entries[0].commit, "abc")
+})
+
+test("falls back to file mtime when date frontmatter is absent", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "ec-hist-nodate-"))
+  const branchDir = path.join(root, ".explain-changes", "b")
+  await mkdir(branchDir, { recursive: true })
+  await writeFile(
+    path.join(branchDir, "abc.md"),
+    ["---", "commit: abc", "---", "body"].join("\n"),
+    "utf8",
+  )
+  const entries = await readHistory(root)
+  assert.equal(entries.length, 1)
+  assert.match(entries[0].date, /^\d{4}-\d{2}-\d{2}T/)
+})
