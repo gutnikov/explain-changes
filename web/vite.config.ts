@@ -11,6 +11,7 @@ export default defineConfig({
     tanstackRouter({
       routesDirectory: "src/routes",
       generatedRouteTree: "src/routeTree.gen.ts",
+      routeFileIgnorePattern: "\\.test\\.[tj]sx?$",
     }),
     react(),
     tailwindcss(),
