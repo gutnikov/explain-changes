@@ -32,8 +32,9 @@ export async function gatherChanges(cwd) {
     try {
       content = await readFile(path.join(cwd, rel), "utf8")
     } catch {
-      continue // skip binary/unreadable
+      continue // skip unreadable
     }
+    if (content.includes("\0")) continue // skip binary
     const rows = content.split("\n")
     if (rows.length && rows[rows.length - 1] === "") rows.pop()
     files.push({
@@ -43,7 +44,7 @@ export async function gatherChanges(cwd) {
       deletions: 0,
       hunks: [
         {
-          header: `@@ -0,0 +1,${rows.length} @@`,
+          header: rows.length === 0 ? "@@ -0,0 +0,0 @@" : `@@ -0,0 +1,${rows.length} @@`,
           lines: rows.map((r) => ({ type: "add", content: `+${r}` })),
         },
       ],

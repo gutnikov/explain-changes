@@ -41,3 +41,10 @@ test("returns no files in a clean repo", async () => {
   const { files } = await gatherChanges(dir)
   assert.deepEqual(files, [])
 })
+
+test("skips binary untracked files", async () => {
+  const dir = await repo()
+  await writeFile(path.join(dir, "bin.dat"), Buffer.from([0x00, 0x01, 0x02, 0x00]))
+  const { files } = await gatherChanges(dir)
+  assert.equal(files.find((f) => f.path === "bin.dat"), undefined)
+})
