@@ -37,12 +37,18 @@ async function main() {
   const handler = createHandler({ sessionDir, projectRoot, webDistDir, onActivity: resetInactivity })
   const server = http.createServer(handler)
 
-  server.listen(0, "127.0.0.1", async () => {
+  server.listen(0, "127.0.0.1", () => {
     const { port } = server.address()
     const info = { url: `http://localhost:${port}`, port, pid: process.pid }
-    await writeFile(path.join(sessionDir, "server-info.json"), JSON.stringify(info), "utf8")
-    console.log(JSON.stringify(info))
-    resetInactivity()
+    writeFile(path.join(sessionDir, "server-info.json"), JSON.stringify(info), "utf8")
+      .then(() => {
+        console.log(JSON.stringify(info))
+        resetInactivity()
+      })
+      .catch((err) => {
+        console.error(err)
+        process.exit(1)
+      })
   })
 }
 

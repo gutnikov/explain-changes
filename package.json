@@ -5,5 +5,8 @@
   "type": "module",
   "scripts": {
     "test:server": "node --test plugin/explain-changes/server/test/"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
