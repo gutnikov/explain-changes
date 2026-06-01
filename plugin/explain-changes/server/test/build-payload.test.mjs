@@ -40,3 +40,10 @@ test("writes payload.json with branch, base, explanation, files", async () => {
   assert.match(payload.explanation, /Added a line/)
   assert.equal(payload.files[0].path, "a.ts")
 })
+
+test("exits non-zero when --session-dir is missing", async () => {
+  const { spawnSync } = await import("node:child_process")
+  const res = spawnSync(process.execPath, [cli], { encoding: "utf8" })
+  assert.equal(res.status, 1)
+  assert.match(res.stderr, /--session-dir is required/)
+})

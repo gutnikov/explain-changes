@@ -9,13 +9,14 @@ function arg(name, fallback) {
 }
 
 async function main() {
-  const sessionDir = path.resolve(arg("session-dir", ""))
-  const projectRoot = path.resolve(arg("project-root", process.cwd()))
-  const explanationFile = arg("explanation-file", "")
-  if (!sessionDir) {
+  const sessionDirArg = arg("session-dir", "")
+  if (!sessionDirArg) {
     console.error("--session-dir is required")
     process.exit(1)
   }
+  const sessionDir = path.resolve(sessionDirArg)
+  const projectRoot = path.resolve(arg("project-root", process.cwd()))
+  const explanationFile = arg("explanation-file", "")
   await mkdir(sessionDir, { recursive: true })
 
   const { branch, files } = await gatherChanges(projectRoot)
