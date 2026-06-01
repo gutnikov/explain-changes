@@ -71,11 +71,12 @@ in a GitHub-PR-style web UI — then act on their decision.
      If the commit fails (hooks/conflicts), surface git's output and do **not** save
      the `.md`. Then stop the server (kill the background process).
 
-   - **`request_changes`**: apply `generalComment` and each `fileComments[path]` as
-     real edits to the code. Then **start over from step 1** with a fresh session
-     (re-gather, re-explain, re-open the UI) so the user re-reviews the updated diff.
-     If you've applied the requested changes and cannot make further progress, surface
-     that to the user instead of looping again.
+   - **`request_changes`**: apply `generalComment` and each entry in `lineComments`
+     (each is `{file, side, line, code, body}` — the `code` is the exact line that was
+     commented on) as real edits to the relevant lines. Then **start over from step 1**
+     with a fresh session (re-gather, re-explain, re-open the UI) so the user re-reviews
+     the updated diff. If you've applied the requested changes and cannot make further
+     progress, surface that to the user instead of looping again.
 
    - **`proceed`**: stop the server and continue the session. Save nothing.
 
