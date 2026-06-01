@@ -102,9 +102,9 @@ export function ReviewScreen() {
       <div className="flex">
         <FileList files={payload.files} onSelect={scrollTo} />
         <div className="mx-auto min-w-0 max-w-5xl flex-1 p-4">
-          <section className="mb-4 rounded-md border p-4">
+          <div className="mb-4">
             <Explanation markdown={payload.explanation} />
-          </section>
+          </div>
           <div className="mb-4">
             <CommentBox value={general} onChange={setGeneral} placeholder="Leave a general comment…" />
           </div>
