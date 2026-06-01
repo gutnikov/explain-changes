@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { describe, it, expect, vi } from "vitest"
+import { render, screen, fireEvent } from "@testing-library/react"
 import { DiffView } from "./DiffView"
-import type { FileChange } from "@/lib/api"
+import type { FileChange, LineComment } from "@/lib/api"
 
 const file: FileChange = {
   path: "a.ts",
@@ -19,17 +19,37 @@ const file: FileChange = {
     },
   ],
 }
+const noop = () => {}
+const base = { file, comments: [] as LineComment[], onAddComment: noop, onRemoveComment: noop }
 
 describe("DiffView", () => {
   it("renders unified rows by default", () => {
-    render(<DiffView file={file} mode="unified" />)
+    render(<DiffView {...base} mode="unified" />)
     expect(screen.getByText("-old")).toBeInTheDocument()
     expect(screen.getByText("+new")).toBeInTheDocument()
   })
 
   it("renders two columns in split mode", () => {
-    const { container } = render(<DiffView file={file} mode="split" />)
+    const { container } = render(<DiffView {...base} mode="split" />)
     expect(container.querySelectorAll('[data-side="left"]').length).toBeGreaterThan(0)
     expect(container.querySelectorAll('[data-side="right"]').length).toBeGreaterThan(0)
+  })
+
+  it("opens an editor on a line and emits onAddComment with the anchor + code", () => {
+    const onAddComment = vi.fn()
+    render(<DiffView {...base} onAddComment={onAddComment} mode="unified" />)
+    fireEvent.click(screen.getByLabelText("comment on new line 1"))
+    fireEvent.change(screen.getByPlaceholderText("Leave a comment…"), { target: { value: "needs work" } })
+    fireEvent.click(screen.getByRole("button", { name: "Comment" }))
+    expect(onAddComment).toHaveBeenCalledWith({ side: "new", line: 1 }, "+new", "needs work")
+  })
+
+  it("renders an existing comment inline and removes it", () => {
+    const onRemoveComment = vi.fn()
+    const comment: LineComment = { file: "a.ts", side: "new", line: 1, code: "+new", body: "existing note" }
+    render(<DiffView {...base} comments={[comment]} onRemoveComment={onRemoveComment} mode="unified" />)
+    expect(screen.getByText("existing note")).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText("remove comment"))
+    expect(onRemoveComment).toHaveBeenCalledWith(comment)
   })
 })
