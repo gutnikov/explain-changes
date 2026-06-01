@@ -34,7 +34,7 @@ async function sendJsonFile(res, file) {
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let data = ""
-    req.on("data", (c) => (data += c))
+    req.on("data", (chunk) => (data += chunk))
     req.on("end", () => resolve(data))
     req.on("error", reject)
   })
@@ -42,9 +42,9 @@ function readBody(req) {
 
 async function serveStatic(res, webDistRoot, pathname) {
   const rel = pathname === "/" ? "index.html" : pathname.replace(/^\/+/, "")
-  const safe = path.normalize(rel).replace(/^(\.\.[/\\])+/, "")
+  const safe = path.normalize(rel)
   let filePath = path.join(webDistRoot, safe)
-  if (!filePath.startsWith(webDistRoot)) {
+  if (filePath !== webDistRoot && !filePath.startsWith(webDistRoot + path.sep)) {
     return sendJson(res, 403, { error: "forbidden" })
   }
   try {
