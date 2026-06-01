@@ -50,11 +50,11 @@ in a GitHub-PR-style web UI — then act on their decision.
 4. **Start the server (background) and give the user the URL:**
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/server/serve.mjs" \
-     --session-dir "$SESSION" --project-root "$PWD" >/dev/null 2>&1 &
+     --session-dir "$SESSION" --project-root "$PWD" --open >/dev/null 2>&1 &
    ```
    The server writes `"$SESSION/server-info.json"` shortly after starting. Wait for that
    file to exist (re-check every ~0.5s for a few seconds), then read the `url` from it
-   and tell the user to open it.
+   and tell the user to open it. The `--open` flag attempts to open the browser automatically; still give the user the URL as a fallback in case the open is blocked.
 
 5. **Wait for the decision.** Poll for `"$SESSION/decision.json"` (re-check every few
    seconds). If the user interrupts in the conversation — asks to stop or starts a new
