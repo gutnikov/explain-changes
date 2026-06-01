@@ -48,3 +48,33 @@ describe("toSplitRows", () => {
     expect(rows[3].right).toMatchObject({ type: "context", no: 13 })
   })
 })
+
+describe("toSplitRows edge cases", () => {
+  it("keeps leftover deletes when del block is longer than add block", () => {
+    const h: Hunk = {
+      header: "@@ -1,2 +1,1 @@",
+      lines: [
+        { type: "del", content: "-a" },
+        { type: "del", content: "-b" },
+        { type: "add", content: "+c" },
+      ],
+    }
+    const rows = toSplitRows(h)
+    expect(rows[0].left).toMatchObject({ type: "del", no: 1, content: "-a" })
+    expect(rows[0].right).toMatchObject({ type: "add", no: 1, content: "+c" })
+    expect(rows[1].left).toMatchObject({ type: "del", no: 2, content: "-b" })
+    expect(rows[1].right).toBeNull()
+  })
+
+  it("returns [] for an empty hunk", () => {
+    const h: Hunk = { header: "@@ -0,0 +0,0 @@", lines: [] }
+    expect(toSplitRows(h)).toEqual([])
+    expect(toUnifiedRows(h)).toEqual([])
+  })
+})
+
+describe("parseHunkHeader without comma counts", () => {
+  it("parses @@ -1 +1 @@", () => {
+    expect(parseHunkHeader("@@ -1 +1 @@")).toEqual({ oldStart: 1, newStart: 1 })
+  })
+})
