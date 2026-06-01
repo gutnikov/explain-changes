@@ -10,19 +10,37 @@ const file: FileChange = {
   deletions: 0,
   hunks: [{ header: "@@ -1 +1,2 @@", lines: [{ type: "add", content: "+x" }] }],
 }
+const noop = () => {}
+const base = {
+  file,
+  mode: "unified" as const,
+  onSetMode: noop,
+  collapsed: false,
+  onToggleCollapse: noop,
+  comments: [],
+  onAddComment: noop,
+  onRemoveComment: noop,
+}
 
 describe("FileCard", () => {
   it("shows the path, status pill, and counts", () => {
-    render(<FileCard file={file} comment="" onComment={() => {}} mode="unified" />)
+    render(<FileCard {...base} />)
     expect(screen.getByText("src/a.ts")).toBeInTheDocument()
     expect(screen.getByText("modified")).toBeInTheDocument()
     expect(screen.getByText("+2")).toBeInTheDocument()
   })
 
-  it("emits comment changes", () => {
-    const onComment = vi.fn()
-    render(<FileCard file={file} comment="" onComment={onComment} mode="unified" />)
-    fireEvent.change(screen.getByPlaceholderText(/comment on this file/i), { target: { value: "looks good" } })
-    expect(onComment).toHaveBeenCalledWith("looks good")
+  it("hides the diff when collapsed", () => {
+    const { rerender } = render(<FileCard {...base} collapsed={false} />)
+    expect(screen.getByText("+x")).toBeInTheDocument()
+    rerender(<FileCard {...base} collapsed={true} />)
+    expect(screen.queryByText("+x")).not.toBeInTheDocument()
+  })
+
+  it("fires onSetMode from the per-file toggle", () => {
+    const onSetMode = vi.fn()
+    render(<FileCard {...base} onSetMode={onSetMode} />)
+    fireEvent.click(screen.getByRole("button", { name: "Split" }))
+    expect(onSetMode).toHaveBeenCalledWith("split")
   })
 })
