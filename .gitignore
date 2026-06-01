@@ -1,4 +1,5 @@
 .superpowers/
 node_modules/
 web/dist/
+.explain-changes/.session/
 .DS_Store
