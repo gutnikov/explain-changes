@@ -17,7 +17,7 @@ describe("api", () => {
     await postDecision({
       action: "commit",
       generalComment: "hi",
-      lineComments: [{ file: "a.ts", side: "new", line: 1, code: "+x", body: "c" }],
+      lineComments: [{ id: "c1", file: "a.ts", side: "new", line: 1, code: "+x", body: "c" }],
     })
     const call = spy.mock.calls[0] as unknown as [string, { method: string; body: string }]
     expect(call).toBeDefined()

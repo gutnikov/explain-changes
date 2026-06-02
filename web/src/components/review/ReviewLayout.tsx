@@ -2,6 +2,8 @@ import { useCallback, useMemo, useState } from "react"
 import { ChevronsDownUp, ChevronsUpDown, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Payload, DecisionAction, LineComment } from "@/lib/api"
+import { postComment } from "@/lib/api"
+import { useReplies } from "@/lib/useReplies"
 import { ActionButton } from "./ActionButton"
 import { DiffFileCard } from "./DiffFileCard"
 import { FileTreeSidebar } from "./FileTreeSidebar"
@@ -37,6 +39,9 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
   // Draft state for inline comments
   const [openDraftKey, setOpenDraftKey] = useState<string | null>(null)
   const [draftBody, setDraftBody] = useState("")
+  const [draftCode, setDraftCode] = useState("")
+
+  const replies = useReplies(true)
 
   const files = useMemo(() => payload.files.map(toFileChange), [payload.files])
   const allFileIds = useMemo(() => files.map((f) => f.path), [files])
@@ -71,7 +76,9 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
 
   const addLineComment = useCallback(
     (file: string, side: "old" | "new", line: number, code: string, body: string) => {
-      setLineComments((cs) => [...cs, { file, side, line, code, body }])
+      const id = crypto.randomUUID()
+      setLineComments((cs) => [...cs, { id, file, side, line, code, body }])
+      postComment({ id, file, side, line, code, body }).catch(() => {})
     },
     [],
   )
@@ -93,32 +100,34 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
         commentsForLine: (f, side, line) => {
           return lineComments
             .filter((c) => c.file === f && c.side === side && c.line === line)
-            .map((c, i) => ({
-              id: `${c.file}:${c.side}:${c.line}:${i}`,
+            .map((c) => ({
+              id: c.id,
               file: c.file,
               line: c.line,
               side: c.side,
               body: c.body,
+              reply: replies[c.id]?.body,
             }))
         },
         draftForLine: (f, side, line) => {
           const key = draftFileLineKey(f, side, line)
           return openDraftKey === key ? draftBody : undefined
         },
-        onOpenDraft: (side, line) => {
+        onOpenDraft: (side, line, code) => {
           setOpenDraftKey(draftFileLineKey(file.path, side, line))
           setDraftBody("")
+          setDraftCode(code)
         },
         onUpdateDraft: (_side, _line, body) => {
           setDraftBody(body)
         },
         onSaveDraft: (side, line) => {
           if (draftBody.trim()) {
-            const code = ""
-            addLineComment(file.path, side, line, code, draftBody.trim())
+            addLineComment(file.path, side, line, draftCode, draftBody.trim())
           }
           setOpenDraftKey(null)
           setDraftBody("")
+          setDraftCode("")
         },
         onCloseDraft: (_side, _line) => {
           setOpenDraftKey(null)
@@ -129,7 +138,7 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
         },
       }
     },
-    [lineComments, openDraftKey, draftBody, addLineComment, removeLineComment],
+    [lineComments, openDraftKey, draftBody, draftCode, replies, addLineComment, removeLineComment],
   )
 
   const handleSubmit = async (action: DecisionAction) => {
