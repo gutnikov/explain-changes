@@ -1,5 +1,10 @@
 import "@testing-library/jest-dom/vitest"
 
+// jsdom doesn't implement scrollIntoView; several components call it.
+if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {}
+}
+
 // next-themes' system detection uses matchMedia, which jsdom doesn't implement.
 if (typeof window !== "undefined" && !window.matchMedia) {
   window.matchMedia = ((query: string) => ({

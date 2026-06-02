@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { ChevronsDownUp, ChevronsUpDown, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Payload, DecisionAction, LineComment } from "@/lib/api"
@@ -70,7 +70,21 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" })
     }
+    // Keep the URL hash in sync so the current file is a copy-pasteable deeplink.
+    if (typeof history !== "undefined") {
+      history.replaceState(null, "", "#" + anchorForId(id))
+    }
   }, [])
+
+  // Deeplink: on load, if the URL hash names a file anchor, scroll to it.
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, "")
+    if (!hash) return
+    const match = allFileIds.find((id) => anchorForId(id) === hash)
+    if (!match) return
+    setSelectedId(match)
+    document.getElementById(hash)?.scrollIntoView({ block: "start" })
+  }, [allFileIds])
 
   const hasComments = generalComment.trim() !== "" || lineComments.length > 0
 
