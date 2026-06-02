@@ -143,3 +143,63 @@ test("GET /replies returns {} when missing and the map when present", async () =
   assert.deepEqual(await res.json(), { c1: { body: "ans", ts: 1 } })
   s.close()
 })
+
+test("GET /api/checkpoints returns current-branch checkpoints from payload.branch", async () => {
+  const s = await startServer()
+  await writeFile(path.join(s.sessionDir, "payload.json"), JSON.stringify({ branch: "feature/x" }), "utf8")
+  const dir = path.join(s.projectRoot, ".explain-changes", "feature-x")
+  await mkdir(dir, { recursive: true })
+  await writeFile(path.join(dir, "c1.json"), JSON.stringify({
+    commit: "c1", branch: "feature/x", date: "2026-02-01T00:00:00Z",
+    explanation: "e", files: [{ path: "a.ts", additions: 2, deletions: 0, hunks: [] }],
+  }), "utf8")
+
+  const res = await fetch(`${s.base}/api/checkpoints`)
+  assert.equal(res.status, 200)
+  const list = await res.json()
+  assert.equal(list.length, 1)
+  assert.equal(list[0].commit, "c1")
+  assert.equal(list[0].hasDiff, true)
+  s.close()
+})
+
+test("GET /api/checkpoints returns [] when payload.json is missing", async () => {
+  const s = await startServer()
+  const res = await fetch(`${s.base}/api/checkpoints`)
+  assert.equal(res.status, 200)
+  assert.deepEqual(await res.json(), [])
+  s.close()
+})
+
+test("GET /api/checkpoints/:commit returns the sidecar payload, 404 when missing", async () => {
+  const s = await startServer()
+  await writeFile(path.join(s.sessionDir, "payload.json"), JSON.stringify({ branch: "feature/x" }), "utf8")
+  const dir = path.join(s.projectRoot, ".explain-changes", "feature-x")
+  await mkdir(dir, { recursive: true })
+  await writeFile(path.join(dir, "c1.json"), JSON.stringify({
+    commit: "c1", branch: "feature/x", date: "2026-02-01T00:00:00Z",
+    explanation: "## Why\nbecause", files: [{ path: "a.ts", additions: 1, deletions: 0, hunks: [] }],
+  }), "utf8")
+
+  let res = await fetch(`${s.base}/api/checkpoints/c1`)
+  assert.equal(res.status, 200)
+  const got = await res.json()
+  assert.equal(got.hasDiff, true)
+  assert.match(got.explanation, /because/)
+
+  res = await fetch(`${s.base}/api/checkpoints/nope`)
+  assert.equal(res.status, 404)
+  s.close()
+})
+
+test("GET /api/checkpoints/:commit rejects path traversal with 404", async () => {
+  const s = await startServer()
+  await writeFile(path.join(s.sessionDir, "payload.json"), JSON.stringify({ branch: "feature/x" }), "utf8")
+  // A secret one directory above the branch dir; must NOT be readable via traversal.
+  await mkdir(path.join(s.projectRoot, ".explain-changes"), { recursive: true })
+  await writeFile(path.join(s.projectRoot, ".explain-changes", "secret.json"), JSON.stringify({ commit: "secret" }), "utf8")
+
+  const res = await fetch(`${s.base}/api/checkpoints/${encodeURIComponent("../secret")}`)
+  assert.equal(res.status, 404)
+  s.close()
+})

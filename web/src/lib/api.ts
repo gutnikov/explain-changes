@@ -62,6 +62,22 @@ export interface HistoryEntry {
   markdown: string
 }
 
+export interface CheckpointSummary {
+  commit: string
+  date: string
+  fileCount: number
+  additions: number
+  deletions: number
+  hasDiff: boolean
+}
+export interface CheckpointDetail {
+  commit: string
+  date: string
+  explanation: string
+  files: FileChange[]
+  hasDiff: boolean
+}
+
 export async function fetchPayload(): Promise<Payload> {
   const res = await fetch("/payload")
   if (!res.ok) throw new Error(`payload ${res.status}`)
@@ -95,5 +111,17 @@ export async function postComment(comment: Comment): Promise<void> {
 export async function fetchReplies(): Promise<Replies> {
   const res = await fetch("/replies")
   if (!res.ok) throw new Error(`replies ${res.status}`)
+  return res.json()
+}
+
+export async function fetchCheckpoints(): Promise<CheckpointSummary[]> {
+  const res = await fetch("/api/checkpoints")
+  if (!res.ok) throw new Error(`checkpoints ${res.status}`)
+  return res.json()
+}
+
+export async function fetchCheckpoint(commit: string): Promise<CheckpointDetail> {
+  const res = await fetch(`/api/checkpoints/${encodeURIComponent(commit)}`)
+  if (!res.ok) throw new Error(`checkpoint ${res.status}`)
   return res.json()
 }

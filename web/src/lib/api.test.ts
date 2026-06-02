@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { fetchPayload, postDecision, fetchHistory, postComment, fetchReplies } from "./api"
+import { fetchPayload, postDecision, fetchHistory, postComment, fetchReplies, fetchCheckpoints, fetchCheckpoint } from "./api"
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -58,5 +58,21 @@ describe("api", () => {
     const h = await fetchHistory()
     expect(spy).toHaveBeenCalledWith("/api/history")
     expect(h[0].commit).toBe("c")
+  })
+
+  it("fetchCheckpoints GETs /api/checkpoints", async () => {
+    const spy = vi.fn(async () => new Response(JSON.stringify([{ commit: "c1", date: "d", fileCount: 1, additions: 2, deletions: 0, hasDiff: true }])))
+    vi.stubGlobal("fetch", spy)
+    const list = await fetchCheckpoints()
+    expect(spy).toHaveBeenCalledWith("/api/checkpoints")
+    expect(list[0].commit).toBe("c1")
+  })
+
+  it("fetchCheckpoint GETs /api/checkpoints/:commit", async () => {
+    const spy = vi.fn(async () => new Response(JSON.stringify({ commit: "c1", date: "d", explanation: "e", files: [], hasDiff: true })))
+    vi.stubGlobal("fetch", spy)
+    const got = await fetchCheckpoint("c1")
+    expect(spy).toHaveBeenCalledWith("/api/checkpoints/c1")
+    expect(got.commit).toBe("c1")
   })
 })

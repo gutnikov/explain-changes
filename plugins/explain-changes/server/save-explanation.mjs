@@ -33,11 +33,12 @@ async function main() {
   }
   const decision = await readJson(path.join(sessionDir, "decision.json")) // null in non-interactive mode
 
+  const date = new Date().toISOString()
   const md = composeMarkdown({
     payload,
     decision,
     commit,
-    date: new Date().toISOString(),
+    date,
   })
 
   // Branch names can contain "/"; flatten to a single directory segment so the
@@ -48,6 +49,17 @@ async function main() {
   await mkdir(outDir, { recursive: true })
   const outFile = path.join(outDir, `${commit}.md`)
   await writeFile(outFile, md, "utf8")
+
+  // Sidecar: the reviewable payload (explanation + parsed diff) so the UI can
+  // render this checkpoint read-only later. Mirrors payload.json's shape.
+  const sidecar = {
+    commit,
+    branch: payload.branch,
+    date,
+    explanation: (payload.explanation ?? "").trim(),
+    files: payload.files ?? [],
+  }
+  await writeFile(path.join(outDir, `${commit}.json`), JSON.stringify(sidecar), "utf8")
   console.log(outFile)
 }
 
