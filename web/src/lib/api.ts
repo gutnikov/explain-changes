@@ -25,12 +25,23 @@ export interface Payload {
 export type DecisionAction = "commit" | "request_changes" | "proceed"
 export type CommentSide = "old" | "new"
 export interface LineComment {
+  id: string
   file: string
   side: CommentSide
   line: number
   code: string
   body: string
 }
+export interface Comment {
+  id: string
+  file: string
+  side: CommentSide
+  line: number
+  code: string
+  body: string
+  ts?: number
+}
+export type Replies = Record<string, { body: string; ts: number }>
 export interface Decision {
   action: DecisionAction
   generalComment: string
@@ -65,5 +76,20 @@ export async function postDecision(decision: Decision): Promise<void> {
 export async function fetchHistory(): Promise<HistoryEntry[]> {
   const res = await fetch("/api/history")
   if (!res.ok) throw new Error(`history ${res.status}`)
+  return res.json()
+}
+
+export async function postComment(comment: Comment): Promise<void> {
+  const res = await fetch("/comments", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ts: Math.floor(Date.now() / 1000), ...comment }),
+  })
+  if (!res.ok) throw new Error(`comment ${res.status}`)
+}
+
+export async function fetchReplies(): Promise<Replies> {
+  const res = await fetch("/replies")
+  if (!res.ok) throw new Error(`replies ${res.status}`)
   return res.json()
 }
