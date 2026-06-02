@@ -9,7 +9,7 @@
       "name": "explain-changes",
       "source": "./plugin/explain-changes",
       "description": "GitHub-PR-style review surface for a coding agent's uncommitted changes, with a saved explanation per commit.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "license": "MIT",
       "keywords": ["claude-code", "codex", "code-review", "diff", "agents"]
     }
