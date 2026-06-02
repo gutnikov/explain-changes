@@ -28,7 +28,7 @@ describe("ReviewScreen", () => {
     render(<ReviewScreen />)
     expect(await screen.findByText("feature/x")).toBeInTheDocument()
     expect(screen.getByText("because")).toBeInTheDocument()
-    expect(screen.getByText("Files changed")).toBeInTheDocument()
+    expect(screen.getByText("Code review")).toBeInTheDocument()
     expect(screen.getAllByText("a.ts").length).toBeGreaterThanOrEqual(1)
   })
 
@@ -49,7 +49,7 @@ describe("ReviewScreen", () => {
     render(<ReviewScreen />)
     await screen.findByText("feature/x")
     fireEvent.change(screen.getByPlaceholderText(/leave a general comment/i), { target: { value: "ship it" } })
-    expect(screen.getByRole("button", { name: /^proceed$/i })).toBeDisabled()
+    expect(screen.getByRole("button", { name: /proceed without commit/i })).toBeDisabled()
     expect(screen.getByRole("button", { name: /commit & proceed/i })).toBeDisabled()
     fireEvent.click(screen.getByRole("button", { name: /request changes/i }))
     await waitFor(() =>

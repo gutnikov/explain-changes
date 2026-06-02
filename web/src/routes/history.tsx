@@ -21,8 +21,8 @@ export function HistoryScreen() {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-72 shrink-0 border-r">
-        <div className="flex items-center gap-1.5 border-b px-3 py-2 text-xs font-semibold text-muted-foreground">
+      <aside className="w-72 shrink-0 border-r border-[var(--border)] bg-[var(--surface)]">
+        <div className="flex items-center gap-1.5 border-b border-[var(--border)] px-3 py-2 text-[11px] font-semibold text-[var(--fg-muted)]">
           <History className="size-3.5" />
           History
           {entries.length > 0 && <span className="font-normal">· {entries.length}</span>}
@@ -33,15 +33,15 @@ export function HistoryScreen() {
               <button
                 onClick={() => setSelected(e.commit)}
                 className={cn(
-                  "w-full border-b px-3 py-1.5 text-left text-xs hover:bg-muted",
-                  e.commit === selected && "bg-primary/10 shadow-[inset_2px_0_0_var(--color-primary)]",
+                  "w-full border-b border-[var(--border)] px-3 py-1.5 text-left text-[12px] hover:bg-[var(--subtle)]",
+                  e.commit === selected && "bg-primary/10 shadow-[inset_2px_0_0_var(--primary)]",
                 )}
               >
                 <div className="font-mono">{e.commit}</div>
-                <div className="text-muted-foreground">
+                <div className="text-[var(--fg-muted)] text-[11px]">
                   {e.branch} · {new Date(e.date).toLocaleString()} ·{" "}
-                  <span className="text-emerald-500">+{e.additions}</span>{" "}
-                  <span className="text-rose-500">−{e.deletions}</span>
+                  <span className="text-[oklch(0.65_0.18_150)]">+{e.additions}</span>{" "}
+                  <span className="text-[oklch(0.60_0.22_30)]">−{e.deletions}</span>
                 </div>
               </button>
             </li>
@@ -50,17 +50,17 @@ export function HistoryScreen() {
       </aside>
       <main className="flex-1 p-6">
         {current ? (
-          <div className="overflow-hidden rounded-md border">
-            <div className="flex items-center gap-1.5 border-b bg-card px-3 py-2 text-xs font-medium text-muted-foreground">
+          <div className="overflow-hidden rounded-lg border border-[var(--border)]">
+            <div className="flex items-center gap-1.5 border-b border-[var(--border)] bg-[var(--muted)]/30 px-3 py-2 text-[12px] font-medium text-[var(--fg-muted)]">
               <FileText className="size-3.5" />
               Explanation
             </div>
-            <div className="prose prose-sm max-w-none px-4 py-3 dark:prose-invert prose-headings:font-semibold prose-h1:text-base prose-h2:text-base prose-h3:text-sm prose-p:text-sm">
+            <div className="prose prose-sm max-w-none px-4 py-3 dark:prose-invert prose-headings:font-semibold prose-h1:text-base prose-h2:text-base prose-h3:text-sm prose-p:text-sm text-[13px]">
               <Markdown remarkPlugins={[remarkGfm]}>{current.markdown}</Markdown>
             </div>
           </div>
         ) : (
-          <p className="text-muted-foreground">No history yet.</p>
+          <p className="text-[var(--fg-muted)]">No history yet.</p>
         )}
       </main>
     </div>

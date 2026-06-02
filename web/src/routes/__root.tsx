@@ -3,8 +3,8 @@ import { ThemeProvider } from "next-themes"
 
 export const Route = createRootRoute({
   component: () => (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <div className="min-h-screen bg-background text-foreground">
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <div className="min-h-screen bg-[var(--canvas)] text-[var(--fg)]">
         <Outlet />
       </div>
     </ThemeProvider>
