@@ -131,6 +131,7 @@ export function createHandler({ sessionDir, projectRoot, webDistDir, onActivity 
       if (req.method === "GET" && pathname.startsWith("/api/checkpoints/")) {
         const branch = await currentBranch(sessionDir)
         const commit = decodeURIComponent(pathname.slice("/api/checkpoints/".length))
+        if (!/^[0-9a-zA-Z_-]+$/.test(commit)) return sendJson(res, 404, { error: "not found" })
         const cp = branch ? await readCheckpoint(projectRoot, branch, commit) : null
         if (!cp) return sendJson(res, 404, { error: "not found" })
         return sendJson(res, 200, cp)

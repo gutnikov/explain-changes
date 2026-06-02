@@ -121,7 +121,7 @@ export async function fetchCheckpoints(): Promise<CheckpointSummary[]> {
 }
 
 export async function fetchCheckpoint(commit: string): Promise<CheckpointDetail> {
-  const res = await fetch(`/api/checkpoints/${commit}`)
+  const res = await fetch(`/api/checkpoints/${encodeURIComponent(commit)}`)
   if (!res.ok) throw new Error(`checkpoint ${res.status}`)
   return res.json()
 }

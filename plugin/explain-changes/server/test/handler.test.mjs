@@ -191,3 +191,15 @@ test("GET /api/checkpoints/:commit returns the sidecar payload, 404 when missing
   assert.equal(res.status, 404)
   s.close()
 })
+
+test("GET /api/checkpoints/:commit rejects path traversal with 404", async () => {
+  const s = await startServer()
+  await writeFile(path.join(s.sessionDir, "payload.json"), JSON.stringify({ branch: "feature/x" }), "utf8")
+  // A secret one directory above the branch dir; must NOT be readable via traversal.
+  await mkdir(path.join(s.projectRoot, ".explain-changes"), { recursive: true })
+  await writeFile(path.join(s.projectRoot, ".explain-changes", "secret.json"), JSON.stringify({ commit: "secret" }), "utf8")
+
+  const res = await fetch(`${s.base}/api/checkpoints/${encodeURIComponent("../secret")}`)
+  assert.equal(res.status, 404)
+  s.close()
+})

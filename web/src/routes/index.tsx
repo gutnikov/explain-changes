@@ -89,7 +89,22 @@ export function ReviewScreen() {
   const shown = isCheckpoint ? cpPayload : payload
 
   if (isCheckpoint && cpError)
-    return <ReviewLayout payload={payload} onSubmit={handleSubmit} checkpointSlot={selector} />
+    return (
+      <div className="max-w-[1280px] mx-auto px-6 py-6">
+        <header className="rounded-lg border border-border bg-card p-5 mb-5 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-[15px] font-semibold tracking-tight">Code review</h1>
+            <div className="mt-2">{selector}</div>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--subtle)] px-2.5 py-1 text-[11px] text-[var(--fg-muted)]">
+            Read-only
+          </span>
+        </header>
+        <div className="rounded-lg border border-border bg-card px-4 py-6 text-center text-sm text-[var(--danger)]">
+          Couldn't load this checkpoint. Pick another, or switch back to Current changes.
+        </div>
+      </div>
+    )
 
   if (!shown)
     return (

@@ -81,4 +81,18 @@ describe("ReviewScreen", () => {
     await screen.findByText(/read-only/i)
     expect(screen.getByText("old work")).toBeInTheDocument()
   })
+
+  it("shows an error (not the interactive live view) when a checkpoint fails to load", async () => {
+    vi.spyOn(api, "fetchCheckpoints").mockResolvedValue([
+      { commit: "abc1234", date: "2026-02-01T00:00:00Z", fileCount: 1, additions: 2, deletions: 0, hasDiff: true },
+    ])
+    vi.spyOn(api, "fetchCheckpoint").mockRejectedValue(new Error("boom"))
+    render(<ReviewScreen />)
+    await screen.findByText("feature/x")
+    fireEvent.click(screen.getByRole("button", { name: /current changes/i }))
+    fireEvent.click(screen.getByRole("menuitem", { name: /abc1234/i }))
+    await screen.findByText(/couldn't load this checkpoint/i)
+    // The interactive action button must NOT be shown while a failed checkpoint is selected.
+    expect(screen.queryByRole("button", { name: /commit & proceed/i })).not.toBeInTheDocument()
+  })
 })
