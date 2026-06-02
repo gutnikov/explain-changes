@@ -99,3 +99,47 @@ test("onActivity fires on each request", async () => {
   assert.ok(s.activity() >= 2)
   s.close()
 })
+
+test("POST /comments appends a line to comments.jsonl", async () => {
+  const s = await startServer()
+  const c1 = { id: "c1", file: "a.ts", side: "new", line: 1, code: "+x", body: "why?", ts: 1 }
+  let res = await fetch(`${s.base}/comments`, { method: "POST", body: JSON.stringify(c1) })
+  assert.equal(res.status, 200)
+  assert.equal((await res.json()).ok, true)
+
+  const c2 = { id: "c2", file: "b.ts", side: "old", line: 2, code: "-y", body: "rename", ts: 2 }
+  await fetch(`${s.base}/comments`, { method: "POST", body: JSON.stringify(c2) })
+
+  const raw = await readFile(path.join(s.sessionDir, "comments.jsonl"), "utf8")
+  const lines = raw.trim().split("\n").map((l) => JSON.parse(l))
+  assert.equal(lines.length, 2)
+  assert.equal(lines[0].id, "c1")
+  assert.equal(lines[1].id, "c2")
+  s.close()
+})
+
+test("GET /comments returns parsed array, [] when missing", async () => {
+  const s = await startServer()
+  let res = await fetch(`${s.base}/comments`)
+  assert.equal(res.status, 200)
+  assert.deepEqual(await res.json(), [])
+
+  await fetch(`${s.base}/comments`, { method: "POST", body: JSON.stringify({ id: "c1", body: "hi" }) })
+  res = await fetch(`${s.base}/comments`)
+  const arr = await res.json()
+  assert.equal(arr.length, 1)
+  assert.equal(arr[0].id, "c1")
+  s.close()
+})
+
+test("GET /replies returns {} when missing and the map when present", async () => {
+  const s = await startServer()
+  let res = await fetch(`${s.base}/replies`)
+  assert.equal(res.status, 200)
+  assert.deepEqual(await res.json(), {})
+
+  await writeFile(path.join(s.sessionDir, "replies.json"), JSON.stringify({ c1: { body: "ans", ts: 1 } }), "utf8")
+  res = await fetch(`${s.base}/replies`)
+  assert.deepEqual(await res.json(), { c1: { body: "ans", ts: 1 } })
+  s.close()
+})
