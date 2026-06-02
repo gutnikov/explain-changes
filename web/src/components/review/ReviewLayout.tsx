@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import { ChevronsDownUp, ChevronsUpDown, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Payload, DecisionAction, LineComment } from "@/lib/api"
@@ -29,9 +29,12 @@ function toFileChange(f: Payload["files"][number]): FileChange {
 interface ReviewLayoutProps {
   payload: Payload
   onSubmit: (action: DecisionAction, generalComment: string, lineComments: LineComment[]) => Promise<void>
+  readOnly?: boolean
+  readOnlyLabel?: string
+  checkpointSlot?: ReactNode
 }
 
-export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
+export function ReviewLayout({ payload, onSubmit, readOnly = false, readOnlyLabel, checkpointSlot }: ReviewLayoutProps) {
   const [generalComment, setGeneralComment] = useState("")
   const [lineComments, setLineComments] = useState<LineComment[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -41,7 +44,7 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
   const [draftBody, setDraftBody] = useState("")
   const [draftCode, setDraftCode] = useState("")
 
-  const replies = useReplies(true)
+  const replies = useReplies(!readOnly)
 
   const files = useMemo(() => payload.files.map(toFileChange), [payload.files])
   const allFileIds = useMemo(() => files.map((f) => f.path), [files])
@@ -160,6 +163,7 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
           return openDraftKey === key ? draftBody : undefined
         },
         onOpenDraft: (side, line, code) => {
+          if (readOnly) return
           setOpenDraftKey(draftFileLineKey(file.path, side, line))
           setDraftBody("")
           setDraftCode(code)
@@ -168,6 +172,7 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
           setDraftBody(body)
         },
         onSaveDraft: (side, line) => {
+          if (readOnly) return
           if (draftBody.trim()) {
             addLineComment(file.path, side, line, draftCode, draftBody.trim())
           }
@@ -180,12 +185,16 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
           setDraftBody("")
         },
         onDeleteComment: (threadId) => {
+          if (readOnly) return
           removeLineComment(threadId)
         },
-        onReply: addReply,
+        onReply: (threadId, body) => {
+          if (readOnly) return
+          addReply(threadId, body)
+        },
       }
     },
-    [lineComments, openDraftKey, draftBody, draftCode, replies, addLineComment, removeLineComment, addReply],
+    [readOnly, lineComments, openDraftKey, draftBody, draftCode, replies, addLineComment, removeLineComment, addReply],
   )
 
   const handleSubmit = async (action: DecisionAction) => {
@@ -213,9 +222,16 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
                   <span className="text-foreground bg-muted px-1.5 py-0.5 rounded">{payload.base.slice(0, 8)}</span>
                 </span>
               </div>
+              {checkpointSlot ? <div className="mt-2">{checkpointSlot}</div> : null}
             </div>
             <div className="shrink-0">
-              <ActionButton hasComments={hasComments} onSubmit={handleSubmit} disabled={submitting} />
+              {readOnly ? (
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--subtle)] px-2.5 py-1 text-[11px] text-[var(--fg-muted)]">
+                  Read-only{readOnlyLabel ? ` — ${readOnlyLabel}` : ""}
+                </span>
+              ) : (
+                <ActionButton hasComments={hasComments} onSubmit={handleSubmit} disabled={submitting} />
+              )}
             </div>
           </div>
         </header>
@@ -271,32 +287,34 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
             </div>
 
             {/* Overall feedback */}
-            <div className="rounded-lg border border-border bg-card overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-muted/30">
-                <MessageSquare size={14} className="text-muted-foreground shrink-0" />
-                <span className="text-[13px] font-semibold">General comment</span>
-                <span className="text-[11px] text-muted-foreground/80">optional</span>
-                {generalComment.trim().length > 0 ? (
-                  <span className="ml-auto text-[11px] text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">
-                    {generalComment.trim().length} chars
-                  </span>
-                ) : null}
+            {!readOnly && (
+              <div className="rounded-lg border border-border bg-card overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border bg-muted/30">
+                  <MessageSquare size={14} className="text-muted-foreground shrink-0" />
+                  <span className="text-[13px] font-semibold">General comment</span>
+                  <span className="text-[11px] text-muted-foreground/80">optional</span>
+                  {generalComment.trim().length > 0 ? (
+                    <span className="ml-auto text-[11px] text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">
+                      {generalComment.trim().length} chars
+                    </span>
+                  ) : null}
+                </div>
+                <div className="px-4 py-3">
+                  <textarea
+                    value={generalComment}
+                    onChange={(e) => setGeneralComment(e.target.value)}
+                    rows={3}
+                    placeholder="Leave a general comment about the changes…"
+                    className={cn(
+                      "w-full px-3 py-2 text-[13px] font-sans resize-y",
+                      "bg-background border border-border rounded-md",
+                      "placeholder:text-muted-foreground/70",
+                      "outline-none focus:border-primary/50 focus-visible:ring-0 transition-colors",
+                    )}
+                  />
+                </div>
               </div>
-              <div className="px-4 py-3">
-                <textarea
-                  value={generalComment}
-                  onChange={(e) => setGeneralComment(e.target.value)}
-                  rows={3}
-                  placeholder="Leave a general comment about the changes…"
-                  className={cn(
-                    "w-full px-3 py-2 text-[13px] font-sans resize-y",
-                    "bg-background border border-border rounded-md",
-                    "placeholder:text-muted-foreground/70",
-                    "outline-none focus:border-primary/50 focus-visible:ring-0 transition-colors",
-                  )}
-                />
-              </div>
-            </div>
+            )}
 
             {/* File cards */}
             {files.map((file) => {
@@ -311,6 +329,7 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
                   collapsed={collapsedIds.has(file.path)}
                   onToggleCollapsed={() => toggleCollapsed(file.path)}
                   commentCount={commentCount}
+                  readOnly={readOnly}
                 />
               )
             })}

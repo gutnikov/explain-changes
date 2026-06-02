@@ -22,10 +22,12 @@ export function DiffView({
   file,
   mode,
   overlay,
+  readOnly,
 }: {
   file: FileChange
   mode: Exclude<ViewMode, "full">
   overlay: DiffViewOverlay
+  readOnly?: boolean
 }) {
   const unifiedRows = useMemo(() => hunksToUnifiedRows(file.hunks), [file.hunks])
   const splitRows = useMemo(() => hunksToSplitRows(file.hunks), [file.hunks])
@@ -62,7 +64,7 @@ export function DiffView({
           const line = (r.row.type === "del" ? r.row.oldLine : r.row.newLine) ?? 0
           return (
             <div key={r.rowKey}>
-              <DiffRowView row={r.row} onAddComment={() => overlay.onOpenDraft(side, line, r.row.text)} />
+              <DiffRowView row={r.row} onAddComment={() => overlay.onOpenDraft(side, line, r.row.text)} showGutterButton={!readOnly} />
               {renderOverlay(side, line)}
             </div>
           )
@@ -94,7 +96,7 @@ export function DiffView({
           const line = left.oldLine ?? 0
           return (
             <div key={`L-${r.pair.rowKey}`}>
-              <DiffRowView row={left} onAddComment={() => overlay.onOpenDraft("old", line, left.text)} />
+              <DiffRowView row={left} onAddComment={() => overlay.onOpenDraft("old", line, left.text)} showGutterButton={!readOnly} />
               {renderOverlay("old", line)}
             </div>
           )
@@ -121,7 +123,7 @@ export function DiffView({
           const line = right.newLine ?? 0
           return (
             <div key={`R-${r.pair.rowKey}`}>
-              <DiffRowView row={right} onAddComment={() => overlay.onOpenDraft("new", line, right.text)} />
+              <DiffRowView row={right} onAddComment={() => overlay.onOpenDraft("new", line, right.text)} showGutterButton={!readOnly} />
               {renderOverlay("new", line)}
             </div>
           )

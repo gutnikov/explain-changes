@@ -18,6 +18,7 @@ interface DiffFileCardProps {
   onToggleCollapsed: () => void
   commentCount: number
   anchorId: string
+  readOnly?: boolean
 }
 
 const MODE_LABEL: Record<ViewMode, string> = {
@@ -32,6 +33,7 @@ export function DiffFileCard({
   onToggleCollapsed,
   commentCount,
   anchorId,
+  readOnly,
 }: DiffFileCardProps) {
   const [mode, setMode] = useState<ViewMode>("changes")
 
@@ -91,7 +93,7 @@ export function DiffFileCard({
           ) : null}
         </div>
       </div>
-      {collapsed ? null : <DiffView file={file} mode={mode} overlay={overlay} />}
+      {collapsed ? null : <DiffView file={file} mode={mode} overlay={overlay} readOnly={readOnly} />}
     </div>
   )
 }
