@@ -3,7 +3,7 @@ import { X } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { cn } from "@/lib/utils"
-import type { ReviewComment, ThreadMessage } from "./types"
+import type { ReviewComment } from "./types"
 
 interface CommentThreadProps {
   comments: ReviewComment[]
@@ -94,9 +94,14 @@ function Thread({
   onDelete?: () => void
   onReply?: (threadId: string, body: string) => void
 }) {
-  const ordered: ThreadMessage[] = [...comment.messages].sort((a, b) => a.ts - b.ts)
-  const last = ordered[ordered.length - 1]
-  const awaitingAgent = last?.author === "user"
+  // Messages already arrive in conversational order (paired by turn). Don't
+  // re-sort by ts — the agent often answers turn N after the user has typed
+  // turn N+1, so its reply ts can be later than the next question, which would
+  // clump every answer after every question instead of threading them.
+  const ordered = comment.messages
+  const userTurns = ordered.filter((m) => m.author === "user").length
+  const agentTurns = ordered.filter((m) => m.author === "agent").length
+  const awaitingAgent = userTurns > agentTurns
   let userSeen = false
   return (
     <div className="mb-1.5 last:mb-0">

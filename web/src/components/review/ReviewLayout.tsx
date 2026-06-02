@@ -8,7 +8,8 @@ import { ActionButton } from "./ActionButton"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { DiffFileCard } from "./DiffFileCard"
 import { FileTreeSidebar } from "./FileTreeSidebar"
-import type { FileChange, ReviewComment, ThreadMessage } from "./types"
+import type { FileChange, ReviewComment } from "./types"
+import { buildThreadMessages } from "./thread"
 import type { DiffViewOverlay } from "./DiffView"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -146,15 +147,8 @@ export function ReviewLayout({ payload, onSubmit, readOnly = false, readOnlyLabe
             if (seen.has(c.threadId)) continue
             seen.add(c.threadId)
             const userMsgs = here.filter((x) => x.threadId === c.threadId)
-            const messages: ThreadMessage[] = userMsgs.map((x, i) => ({
-              author: "user" as const,
-              body: x.body,
-              ts: x.ts ?? i,
-            }))
             const agentMsgs = replies[c.threadId] ?? []
-            for (const a of agentMsgs) {
-              messages.push({ author: "agent", body: a.body, ts: a.ts })
-            }
+            const messages = buildThreadMessages(userMsgs, agentMsgs)
             threads.push({ threadId: c.threadId, file: c.file, line: c.line, side: c.side, messages })
           }
           return threads

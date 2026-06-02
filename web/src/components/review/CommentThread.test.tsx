@@ -56,6 +56,43 @@ describe("CommentThread", () => {
     expect(screen.queryByText(/agent typing/i)).not.toBeInTheDocument()
   })
 
+  it("shows 'Agent typing…' again after a follow-up question, even with an earlier first answer", () => {
+    // Turn-paired order as produced by buildThreadMessages: Q1, A1, Q2 (Q2 unanswered).
+    render(
+      <CommentThread
+        comments={[
+          thread({
+            messages: [
+              { author: "user", body: "Q1", ts: 1 },
+              { author: "agent", body: "A1", ts: 5 },
+              { author: "user", body: "Q2", ts: 3 },
+            ],
+          }),
+        ]}
+      />,
+    )
+    expect(screen.getByText(/agent typing/i)).toBeInTheDocument()
+  })
+
+  it("renders messages in the order given without re-sorting by ts", () => {
+    render(
+      <CommentThread
+        comments={[
+          thread({
+            messages: [
+              { author: "user", body: "Q1", ts: 1 },
+              { author: "agent", body: "A1", ts: 5 },
+              { author: "user", body: "Q2", ts: 3 },
+              { author: "agent", body: "A2", ts: 6 },
+            ],
+          }),
+        ]}
+      />,
+    )
+    const texts = screen.getAllByText(/^[QA]\d$/).map((el) => el.textContent)
+    expect(texts).toEqual(["Q1", "A1", "Q2", "A2"])
+  })
+
   it("sends a follow-up reply via onReply", () => {
     const onReply = vi.fn()
     render(<CommentThread comments={[thread()]} onReply={onReply} />)
