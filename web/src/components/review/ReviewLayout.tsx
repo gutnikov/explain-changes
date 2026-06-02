@@ -169,6 +169,7 @@ export function ReviewLayout({ payload, onSubmit, readOnly = false, readOnlyLabe
           setDraftCode(code)
         },
         onUpdateDraft: (_side, _line, body) => {
+          if (readOnly) return
           setDraftBody(body)
         },
         onSaveDraft: (side, line) => {
@@ -181,6 +182,7 @@ export function ReviewLayout({ payload, onSubmit, readOnly = false, readOnlyLabe
           setDraftCode("")
         },
         onCloseDraft: (_side, _line) => {
+          if (readOnly) return
           setOpenDraftKey(null)
           setDraftBody("")
         },
