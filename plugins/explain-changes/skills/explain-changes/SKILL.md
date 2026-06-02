@@ -188,6 +188,10 @@ At each user-defined checkpoint trigger:
 
 - Session dirs live under `.explain-changes/.session/` and are gitignored; the
   persisted records are `.explain-changes/<branch>/<hash>.md`, written only on commit.
+- On commit, alongside `<hash>.md`, a `<hash>.json` sidecar is written holding the
+  explanation and the parsed diff (`files` with hunks). The review UI's checkpoint
+  switcher reads these to show past checkpoints read-only; the `.md` remains the
+  human-readable record. `save-explanation.mjs` writes both.
 - During the interactive review, the UI appends user line-comments (and thread
   follow-ups) to `comments.jsonl`; your answers live in `replies.json` (keyed by
   `threadId`, an array of answers per thread) and judged message ids in
