@@ -1,6 +1,7 @@
 import { readFile, writeFile, stat, appendFile } from "node:fs/promises"
 import path from "node:path"
 import { readHistory } from "./history.mjs"
+import { readCheckpoints, readCheckpoint } from "./checkpoints.mjs"
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -28,6 +29,15 @@ async function sendJsonFile(res, file) {
     res.end(data)
   } catch {
     sendJson(res, 404, { error: "not found" })
+  }
+}
+
+async function currentBranch(sessionDir) {
+  try {
+    const raw = await readFile(path.join(sessionDir, "payload.json"), "utf8")
+    return JSON.parse(raw).branch ?? null
+  } catch {
+    return null
   }
 }
 
@@ -112,6 +122,18 @@ export function createHandler({ sessionDir, projectRoot, webDistDir, onActivity 
         } catch {
           return sendJson(res, 200, {})
         }
+      }
+      if (req.method === "GET" && pathname === "/api/checkpoints") {
+        const branch = await currentBranch(sessionDir)
+        if (!branch) return sendJson(res, 200, [])
+        return sendJson(res, 200, await readCheckpoints(projectRoot, branch))
+      }
+      if (req.method === "GET" && pathname.startsWith("/api/checkpoints/")) {
+        const branch = await currentBranch(sessionDir)
+        const commit = decodeURIComponent(pathname.slice("/api/checkpoints/".length))
+        const cp = branch ? await readCheckpoint(projectRoot, branch, commit) : null
+        if (!cp) return sendJson(res, 404, { error: "not found" })
+        return sendJson(res, 200, cp)
       }
       if (req.method === "GET" && pathname === "/api/history") {
         return sendJson(res, 200, await readHistory(projectRoot))
