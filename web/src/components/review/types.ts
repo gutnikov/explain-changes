@@ -26,6 +26,7 @@ export interface ReviewComment {
   line: number
   side: "old" | "new"
   body: string
+  reply?: string
 }
 
 export interface HunkRow {

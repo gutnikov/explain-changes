@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { fetchPayload, postDecision, fetchHistory } from "./api"
+import { fetchPayload, postDecision, fetchHistory, postComment, fetchReplies } from "./api"
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -17,7 +17,7 @@ describe("api", () => {
     await postDecision({
       action: "commit",
       generalComment: "hi",
-      lineComments: [{ file: "a.ts", side: "new", line: 1, code: "+x", body: "c" }],
+      lineComments: [{ id: "c1", file: "a.ts", side: "new", line: 1, code: "+x", body: "c" }],
     })
     const call = spy.mock.calls[0] as unknown as [string, { method: string; body: string }]
     expect(call).toBeDefined()
@@ -28,6 +28,27 @@ describe("api", () => {
     expect(sent.action).toBe("commit")
     expect(sent.lineComments).toHaveLength(1)
     expect(sent.lineComments[0].line).toBe(1)
+  })
+
+  it("postComment POSTs the comment JSON to /comments", async () => {
+    const spy = vi.fn(async () => new Response(JSON.stringify({ ok: true })))
+    vi.stubGlobal("fetch", spy)
+    await postComment({ id: "c1", file: "a.ts", side: "new", line: 1, code: "+x", body: "why?" })
+    const [url, init] = spy.mock.calls[0] as unknown as [string, { method: string; body: string }]
+    expect(url).toBe("/comments")
+    expect(init.method).toBe("POST")
+    const sent = JSON.parse(init.body)
+    expect(sent.id).toBe("c1")
+    expect(sent.body).toBe("why?")
+    expect(typeof sent.ts).toBe("number")
+  })
+
+  it("fetchReplies returns the replies map", async () => {
+    const spy = vi.fn(async () => new Response(JSON.stringify({ c1: { body: "ans", ts: 1 } })))
+    vi.stubGlobal("fetch", spy)
+    const r = await fetchReplies()
+    expect(spy).toHaveBeenCalledWith("/replies")
+    expect(r.c1.body).toBe("ans")
   })
 
   it("fetchHistory returns the entry array", async () => {

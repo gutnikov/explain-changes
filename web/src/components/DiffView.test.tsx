@@ -46,7 +46,7 @@ describe("DiffView", () => {
 
   it("renders an existing comment inline and removes it", () => {
     const onRemoveComment = vi.fn()
-    const comment: LineComment = { file: "a.ts", side: "new", line: 2, code: "+new", body: "existing note" }
+    const comment: LineComment = { id: "c1", file: "a.ts", side: "new", line: 2, code: "+new", body: "existing note" }
     render(<DiffView {...base} comments={[comment]} onRemoveComment={onRemoveComment} mode="unified" />)
     expect(screen.getByText("existing note")).toBeInTheDocument()
     fireEvent.click(screen.getByLabelText("remove comment on new line 2"))

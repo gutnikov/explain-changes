@@ -1,4 +1,4 @@
-import { readFile, writeFile, stat } from "node:fs/promises"
+import { readFile, writeFile, stat, appendFile } from "node:fs/promises"
 import path from "node:path"
 import { readHistory } from "./history.mjs"
 
@@ -88,6 +88,30 @@ export function createHandler({ sessionDir, projectRoot, webDistDir, onActivity 
         const body = await readBody(req)
         await writeFile(path.join(sessionDir, "decision.json"), body, "utf8")
         return sendJson(res, 200, { ok: true })
+      }
+      if (req.method === "POST" && pathname === "/comments") {
+        const body = await readBody(req)
+        await appendFile(path.join(sessionDir, "comments.jsonl"), body.trim() + "\n", "utf8")
+        return sendJson(res, 200, { ok: true })
+      }
+      if (req.method === "GET" && pathname === "/comments") {
+        let lines = []
+        try {
+          const raw = await readFile(path.join(sessionDir, "comments.jsonl"), "utf8")
+          lines = raw.split("\n").filter(Boolean).map((l) => JSON.parse(l))
+        } catch {
+          lines = []
+        }
+        return sendJson(res, 200, lines)
+      }
+      if (req.method === "GET" && pathname === "/replies") {
+        try {
+          const raw = await readFile(path.join(sessionDir, "replies.json"), "utf8")
+          res.writeHead(200, { "content-type": "application/json; charset=utf-8" })
+          return res.end(raw)
+        } catch {
+          return sendJson(res, 200, {})
+        }
       }
       if (req.method === "GET" && pathname === "/api/history") {
         return sendJson(res, 200, await readHistory(projectRoot))

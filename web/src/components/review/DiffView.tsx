@@ -10,7 +10,7 @@ type CommentSide = "old" | "new"
 export interface DiffViewOverlay {
   commentsForLine: (file: string, side: CommentSide, line: number) => ReviewComment[]
   draftForLine: (file: string, side: CommentSide, line: number) => string | undefined
-  onOpenDraft: (side: CommentSide, line: number) => void
+  onOpenDraft: (side: CommentSide, line: number, code: string) => void
   onSaveDraft: (side: CommentSide, line: number) => void
   onCloseDraft: (side: CommentSide, line: number) => void
   onUpdateDraft: (side: CommentSide, line: number, body: string) => void
@@ -60,7 +60,7 @@ export function DiffView({
           const line = (r.row.type === "del" ? r.row.oldLine : r.row.newLine) ?? 0
           return (
             <div key={r.rowKey}>
-              <DiffRowView row={r.row} onAddComment={() => overlay.onOpenDraft(side, line)} />
+              <DiffRowView row={r.row} onAddComment={() => overlay.onOpenDraft(side, line, r.row.text)} />
               {renderOverlay(side, line)}
             </div>
           )
@@ -92,7 +92,7 @@ export function DiffView({
           const line = left.oldLine ?? 0
           return (
             <div key={`L-${r.pair.rowKey}`}>
-              <DiffRowView row={left} onAddComment={() => overlay.onOpenDraft("old", line)} />
+              <DiffRowView row={left} onAddComment={() => overlay.onOpenDraft("old", line, left.text)} />
               {renderOverlay("old", line)}
             </div>
           )
@@ -119,7 +119,7 @@ export function DiffView({
           const line = right.newLine ?? 0
           return (
             <div key={`R-${r.pair.rowKey}`}>
-              <DiffRowView row={right} onAddComment={() => overlay.onOpenDraft("new", line)} />
+              <DiffRowView row={right} onAddComment={() => overlay.onOpenDraft("new", line, right.text)} />
               {renderOverlay("new", line)}
             </div>
           )
