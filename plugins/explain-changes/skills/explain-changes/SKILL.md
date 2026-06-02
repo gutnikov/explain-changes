@@ -28,14 +28,64 @@ in a GitHub-PR-style web UI — then act on their decision.
    mkdir -p "$SESSION"
    ```
 
-2. **Author the explanation.** Write a concise markdown explanation of what changed
-   and why to `"$SESSION/explanation.md"`. Use these sections:
-   ```markdown
-   ## What changed & why
-   <prose>
+2. **Author the explanation — write a narrative, not a report.** Write a markdown
+   explanation to `"$SESSION/explanation.md"` that a smart reader who did **not**
+   see the task can read top-to-bottom and come away understanding what happened
+   and why. Tell it as a short story, not a checklist.
 
-   ## Per-file notes
-   - **path/to/file** — <what & why>
+   Cover these beats in whatever shape fits the change (pick your own headings;
+   omit a beat if the change is trivial — a one-line fix can be one paragraph):
+
+   1. **Context / the setup** — what this part of the codebase does and what
+      prompted the change, so the reader has footing before any diff.
+   2. **The goal** — one or two plain sentences on what we set out to achieve.
+   3. **The approach** — the path chosen and *why* (mention roads not taken when it
+      clarifies). An ASCII diagram of a before→after flow or box/arrow architecture
+      often earns its place here.
+   4. **Walking through the changes** — narrate the edits in reading order. Link
+      each file to its diff card (see anchor format below) and drop in short code
+      snippets where seeing the code explains faster than prose.
+
+   **Craft rules:**
+   - Write for someone smart but unfamiliar with this code; define an unavoidable
+     term the first time you use it.
+   - Lead with *why* before *what*. Short paragraphs.
+   - Use a diagram or snippet only when it adds understanding — never as decoration.
+   - Use fenced code blocks for snippets and for ASCII diagrams. (Code blocks render
+     in monospace; there is no syntax coloring — keep snippets short and focused.)
+
+   **Link to a file's diff card** with a markdown link to its anchor. The anchor is
+   `#file-` followed by the file path with every run of non-`[A-Za-z0-9_-]`
+   characters replaced by a single `-`. Examples:
+   - `frontend/src/lib/types.ts` → `[types.ts](#file-frontend-src-lib-types-ts)`
+   - `server/lib/handler.mjs` → `[handler.mjs](#file-server-lib-handler-mjs)`
+
+   **Worked example** (shape to aim for):
+   ```markdown
+   ## The setup
+   The board view fetches labels from the API but typed them as `any`, so a typo
+   in a label field silently slipped through to render.
+
+   ## Goal
+   Make labels type-safe end to end without changing any runtime behavior.
+
+   ## Approach
+   Mirror the backend `LabelRead` schema as a single TS interface and thread it
+   through the API client and the board components:
+
+       api.ts  ──returns──▶  Label[]
+          │
+          ▼
+       board.tsx (filters, chips) ──uses──▶ Label.id / .name / .color
+
+   ## Walking through the changes
+   The new shape lives in [types.ts](#file-frontend-src-lib-types-ts):
+
+       export interface Label { id: number; name: string; color: string }
+
+   [api.ts](#file-frontend-src-lib-api-ts) now returns `Label[]` from
+   `listLabels()`, and [board.tsx](#file-frontend-src-board-tsx) consumes the typed
+   fields instead of `any`.
    ```
 
 3. **Build the payload:**
