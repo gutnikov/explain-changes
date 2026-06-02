@@ -1,4 +1,6 @@
 import { X } from "lucide-react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { cn } from "@/lib/utils"
 import type { ReviewComment } from "./types"
 
@@ -22,23 +24,30 @@ export function CommentThread({
   return (
     <div className="border-y border-[var(--border)] bg-[var(--muted)]/30 px-3 py-2">
       {comments.map((c, i) => (
-        <div
-          key={`${c.file}:${c.line}:${i}`}
-          className="mb-1.5 last:mb-0 rounded-md border border-[var(--border)] bg-[var(--card)] px-2.5 py-1.5 text-[12px]"
-        >
-          <div className="flex items-start justify-between gap-2">
-            <span className="whitespace-pre-wrap font-sans">{c.body}</span>
-            {onDelete && (
-              <button
-                type="button"
-                aria-label="Remove comment"
-                className="shrink-0 text-[var(--fg-muted)] hover:text-[var(--danger)]"
-                onClick={() => onDelete(i)}
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
+        <div key={`${c.file}:${c.line}:${i}`} className="mb-1.5 last:mb-0">
+          <div className="rounded-md border border-[var(--border)] bg-[var(--card)] px-2.5 py-1.5 text-[12px]">
+            <div className="flex items-start justify-between gap-2">
+              <span className="whitespace-pre-wrap font-sans">{c.body}</span>
+              {onDelete && (
+                <button
+                  type="button"
+                  aria-label="Remove comment"
+                  className="shrink-0 text-[var(--fg-muted)] hover:text-[var(--danger)]"
+                  onClick={() => onDelete(i)}
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
           </div>
+          {c.reply && (
+            <div className="mt-1 ml-3 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[12px]">
+              <div className="mb-0.5 text-[11px] font-semibold text-primary">Agent</div>
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{c.reply}</ReactMarkdown>
+              </div>
+            </div>
+          )}
         </div>
       ))}
       {draft !== undefined && (
