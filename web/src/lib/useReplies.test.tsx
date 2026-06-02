@@ -8,10 +8,10 @@ describe("useReplies", () => {
   it("fetches replies on mount and returns the map", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ c1: { body: "ans", ts: 1 } }))),
+      vi.fn(async () => new Response(JSON.stringify({ t1: [{ body: "ans", ts: 1 }] }))),
     )
     const { result } = renderHook(() => useReplies(true))
-    await waitFor(() => expect(result.current.c1?.body).toBe("ans"))
+    await waitFor(() => expect(result.current.t1?.[0].body).toBe("ans"))
   })
 
   it("returns empty map when disabled and does not fetch", async () => {
