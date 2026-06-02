@@ -1,7 +1,7 @@
 {
   "name": "explain-changes",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "test:server": "node --test plugin/explain-changes/server/test/"

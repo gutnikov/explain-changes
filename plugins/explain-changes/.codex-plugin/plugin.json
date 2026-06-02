@@ -1,6 +1,6 @@
 {
   "name": "explain-changes",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Review a coding agent's uncommitted changes in a GitHub-PR-style web UI; save an explanation per commit (Codex).",
   "author": { "name": "Alex Gutnikov", "url": "https://github.com/gutnikov" },
   "license": "MIT",
