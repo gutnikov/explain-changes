@@ -39,6 +39,18 @@ test("GET /payload returns the session payload, 404 when missing", async () => {
   s.close()
 })
 
+test("index.html is no-cache; hashed assets are immutable", async () => {
+  const s = await startServer()
+  const html = await fetch(`${s.base}/`)
+  assert.equal(html.headers.get("cache-control"), "no-cache")
+  // SPA fallback (extensionless route) also serves index.html → must be no-cache
+  const spa = await fetch(`${s.base}/history`)
+  assert.equal(spa.headers.get("cache-control"), "no-cache")
+  const asset = await fetch(`${s.base}/assets/app.js`)
+  assert.match(asset.headers.get("cache-control"), /immutable/)
+  s.close()
+})
+
 test("POST /decision writes decision.json", async () => {
   const s = await startServer()
   const body = JSON.stringify({ action: "commit", generalComment: "ok", lineComments: [] })

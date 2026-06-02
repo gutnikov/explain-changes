@@ -60,7 +60,14 @@ async function serveStatic(res, webDistRoot, pathname) {
   } catch {
     return sendJson(res, 404, { error: "not found" })
   }
-  res.writeHead(200, { "content-type": MIME[path.extname(filePath)] ?? "application/octet-stream" })
+  const ext = path.extname(filePath)
+  // index.html must always be revalidated so an upgraded bundle's new asset
+  // references load immediately; content-hashed assets can be cached forever.
+  const cacheControl = ext === ".html" ? "no-cache" : "public, max-age=31536000, immutable"
+  res.writeHead(200, {
+    "content-type": MIME[ext] ?? "application/octet-stream",
+    "cache-control": cacheControl,
+  })
   res.end(data)
 }
 
