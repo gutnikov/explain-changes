@@ -26,14 +26,7 @@ export type DecisionAction = "commit" | "request_changes" | "proceed"
 export type CommentSide = "old" | "new"
 export interface LineComment {
   id: string
-  file: string
-  side: CommentSide
-  line: number
-  code: string
-  body: string
-}
-export interface Comment {
-  id: string
+  threadId: string
   file: string
   side: CommentSide
   line: number
@@ -41,7 +34,18 @@ export interface Comment {
   body: string
   ts?: number
 }
-export type Replies = Record<string, { body: string; ts: number }>
+export interface Comment {
+  id: string
+  threadId: string
+  file: string
+  side: CommentSide
+  line: number
+  code: string
+  body: string
+  ts?: number
+}
+export type Reply = { body: string; ts: number }
+export type Replies = Record<string, Reply[]>
 export interface Decision {
   action: DecisionAction
   generalComment: string

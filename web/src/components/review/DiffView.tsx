@@ -14,7 +14,8 @@ export interface DiffViewOverlay {
   onSaveDraft: (side: CommentSide, line: number) => void
   onCloseDraft: (side: CommentSide, line: number) => void
   onUpdateDraft: (side: CommentSide, line: number, body: string) => void
-  onDeleteComment: (file: string, side: CommentSide, line: number, index: number) => void
+  onDeleteComment: (threadId: string) => void
+  onReply: (threadId: string, body: string) => void
 }
 
 export function DiffView({
@@ -36,7 +37,8 @@ export function DiffView({
     return (
       <CommentThread
         comments={comments}
-        onDelete={(idx) => overlay.onDeleteComment(file.path, side, line, idx)}
+        onDelete={(threadId) => overlay.onDeleteComment(threadId)}
+        onReply={overlay.onReply}
         draft={draft}
         onDraftChange={(v) => overlay.onUpdateDraft(side, line, v)}
         onDraftSave={() => overlay.onSaveDraft(side, line)}

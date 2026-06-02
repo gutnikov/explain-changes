@@ -20,13 +20,18 @@ export interface FileChange {
   hunks: Hunk[]
 }
 
+export interface ThreadMessage {
+  author: "user" | "agent"
+  body: string
+  ts: number
+}
+
 export interface ReviewComment {
-  id: string
+  threadId: string
   file: string
   line: number
   side: "old" | "new"
-  body: string
-  reply?: string
+  messages: ThreadMessage[]
 }
 
 export interface HunkRow {

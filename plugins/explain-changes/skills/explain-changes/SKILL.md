@@ -59,23 +59,33 @@ in a GitHub-PR-style web UI — then act on their decision.
 5. **Poll loop — answer comments and wait for the decision.** Loop every few
    seconds. On each iteration:
 
-   **a. Answer new comments.** Read `"$SESSION/comments.jsonl"` (each line is
-   `{id, file, side, line, code, body, ts}`) and `"$SESSION/seen.json"` (a JSON
-   array of already-judged ids; absent = `[]`). For every comment whose `id` is
-   **not** in `seen`, judge its intent:
-   - If it's a **question or wants discussion**, write a concise answer for it.
+   **a. Answer new comments.** Read `"$SESSION/comments.jsonl"` and
+   `"$SESSION/seen.json"` **defensively** — either file may not exist yet on the
+   first pass; treat a missing/empty file as no comments / `[]` and never let that
+   abort the loop (e.g. `cat "$SESSION/comments.jsonl" 2>/dev/null`). Each
+   `comments.jsonl` line is `{id, threadId, file, side, line, code, body, ts}`.
+   Messages sharing a `threadId` are one conversation thread (a follow-up reuses
+   the original `threadId` with a new `id`); `seen.json` lists message ids you've
+   already judged.
+
+   For every message whose `id` is **not** in `seen`, judge its intent:
+   - If it's a **question or wants discussion** (including a follow-up in a thread
+     you've already answered), write a concise answer for its `threadId`.
    - If it's a **pure change request** (an instruction to edit code), do not
      answer it here — it will be applied on `request_changes`.
 
-   Then record what you judged with one call (pass only the ids you answered in
-   `--replies`, and **all** newly-judged ids in `--seen`):
+   Then record what you judged with one call. `--replies` is keyed by **threadId**
+   and each value is an **array** of answers (the helper appends, so a new answer
+   in an existing thread continues the conversation). Pass **all** newly-judged
+   message ids in `--seen`:
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/server/save-replies.mjs" \
      --session-dir "$SESSION" \
-     --replies '{"<commentId>":{"body":"<your answer>","ts":<epoch>}}' \
-     --seen '["<commentId>", "..."]'
+     --replies '{"<threadId>":[{"body":"<your answer>","ts":<epoch>}]}' \
+     --seen '["<messageId>", "..."]'
    ```
-   The UI polls `/replies` and shows your answers inline under each comment.
+   The UI polls `/replies` and shows your answers inline in each thread; while a
+   user message is awaiting your answer it shows an "Agent typing…" hint.
 
    **b. Check the decision.** Read `"$SESSION/decision.json"`. If it does not yet
    exist, sleep briefly and repeat from (a). If the user interrupts in the
@@ -94,8 +104,8 @@ in a GitHub-PR-style web UI — then act on their decision.
      the `.md`. Then stop the server (kill the background process).
 
    - **`request_changes`**: apply `generalComment` and each entry in `lineComments`
-     (each is `{id, file, side, line, code, body}` — the `code` is the exact line that
-     was commented on) as real edits to the relevant lines. Then **start over from
+     (each is `{id, threadId, file, side, line, code, body}` — the `code` is the exact
+     line that was commented on) as real edits to the relevant lines. Then **start over from
      step 1** with a fresh session (re-gather, re-explain, re-open the UI) so the user
      re-reviews the updated diff. If you've applied the requested changes and cannot
      make further progress, surface that to the user instead of looping again.
@@ -128,9 +138,10 @@ At each user-defined checkpoint trigger:
 
 - Session dirs live under `.explain-changes/.session/` and are gitignored; the
   persisted records are `.explain-changes/<branch>/<hash>.md`, written only on commit.
-- During the interactive review, the UI appends user line-comments to
-  `comments.jsonl`; your answers and judged ids live in `replies.json` /
-  `seen.json` (written via `save-replies.mjs`). All are inside the gitignored
+- During the interactive review, the UI appends user line-comments (and thread
+  follow-ups) to `comments.jsonl`; your answers live in `replies.json` (keyed by
+  `threadId`, an array of answers per thread) and judged message ids in
+  `seen.json`, both written via `save-replies.mjs`. All are inside the gitignored
   session dir and are never committed.
 - Stop the background server by reading the `pid` field from `"$SESSION/server-info.json"`
   and running `kill <pid>` (the server also self-exits after inactivity, but always stop

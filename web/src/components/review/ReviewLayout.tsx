@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { ChevronsDownUp, ChevronsUpDown, MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Payload, DecisionAction, LineComment } from "@/lib/api"
@@ -7,7 +7,7 @@ import { useReplies } from "@/lib/useReplies"
 import { ActionButton } from "./ActionButton"
 import { DiffFileCard } from "./DiffFileCard"
 import { FileTreeSidebar } from "./FileTreeSidebar"
-import type { FileChange } from "./types"
+import type { FileChange, ReviewComment, ThreadMessage } from "./types"
 import type { DiffViewOverlay } from "./DiffView"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -70,26 +70,61 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" })
     }
+    // Keep the URL hash in sync so the current file is a copy-pasteable deeplink.
+    if (typeof history !== "undefined") {
+      history.replaceState(null, "", "#" + anchorForId(id))
+    }
   }, [])
+
+  // Deeplink: on load, if the URL hash names a file anchor, scroll to it.
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, "")
+    if (!hash) return
+    const match = allFileIds.find((id) => anchorForId(id) === hash)
+    if (!match) return
+    setSelectedId(match)
+    document.getElementById(hash)?.scrollIntoView({ block: "start" })
+  }, [allFileIds])
 
   const hasComments = generalComment.trim() !== "" || lineComments.length > 0
 
   const addLineComment = useCallback(
     (file: string, side: "old" | "new", line: number, code: string, body: string) => {
       const id = crypto.randomUUID()
-      setLineComments((cs) => [...cs, { id, file, side, line, code, body }])
-      postComment({ id, file, side, line, code, body }).catch(() => {})
+      const c = { id, threadId: id, file, side, line, code, body, ts: Math.floor(Date.now() / 1000) }
+      setLineComments((cs) => [...cs, c])
+      postComment(c).catch(() => {})
     },
     [],
   )
 
-  const removeLineComment = useCallback((file: string, side: "old" | "new", line: number, index: number) => {
-    setLineComments((cs) => {
-      const filtered = cs.filter((c) => c.file === file && c.side === side && c.line === line)
-      const toRemove = filtered[index]
-      if (!toRemove) return cs
-      return cs.filter((c) => c !== toRemove)
-    })
+  // A follow-up message reuses the original comment's threadId (and its anchor)
+  // with a fresh id, so the agent treats it as the next turn in the same thread.
+  const addReply = useCallback(
+    (threadId: string, body: string) => {
+      setLineComments((cs) => {
+        const root = cs.find((c) => c.threadId === threadId)
+        if (!root) return cs
+        const id = crypto.randomUUID()
+        const c = {
+          id,
+          threadId,
+          file: root.file,
+          side: root.side,
+          line: root.line,
+          code: root.code,
+          body,
+          ts: Math.floor(Date.now() / 1000),
+        }
+        postComment(c).catch(() => {})
+        return [...cs, c]
+      })
+    },
+    [],
+  )
+
+  const removeLineComment = useCallback((threadId: string) => {
+    setLineComments((cs) => cs.filter((c) => c.threadId !== threadId))
   }, [])
 
   const buildOverlay = useCallback(
@@ -98,16 +133,27 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
 
       return {
         commentsForLine: (f, side, line) => {
-          return lineComments
-            .filter((c) => c.file === f && c.side === side && c.line === line)
-            .map((c) => ({
-              id: c.id,
-              file: c.file,
-              line: c.line,
-              side: c.side,
-              body: c.body,
-              reply: replies[c.id]?.body,
+          const here = lineComments.filter((c) => c.file === f && c.side === side && c.line === line)
+          // One ReviewComment per thread; messages interleave the user's comments
+          // (in insertion order) with the agent's replies for that thread.
+          const seen = new Set<string>()
+          const threads: ReviewComment[] = []
+          for (const c of here) {
+            if (seen.has(c.threadId)) continue
+            seen.add(c.threadId)
+            const userMsgs = here.filter((x) => x.threadId === c.threadId)
+            const messages: ThreadMessage[] = userMsgs.map((x, i) => ({
+              author: "user" as const,
+              body: x.body,
+              ts: x.ts ?? i,
             }))
+            const agentMsgs = replies[c.threadId] ?? []
+            for (const a of agentMsgs) {
+              messages.push({ author: "agent", body: a.body, ts: a.ts })
+            }
+            threads.push({ threadId: c.threadId, file: c.file, line: c.line, side: c.side, messages })
+          }
+          return threads
         },
         draftForLine: (f, side, line) => {
           const key = draftFileLineKey(f, side, line)
@@ -133,12 +179,13 @@ export function ReviewLayout({ payload, onSubmit }: ReviewLayoutProps) {
           setOpenDraftKey(null)
           setDraftBody("")
         },
-        onDeleteComment: (f, side, line, index) => {
-          removeLineComment(f, side, line, index)
+        onDeleteComment: (threadId) => {
+          removeLineComment(threadId)
         },
+        onReply: addReply,
       }
     },
-    [lineComments, openDraftKey, draftBody, draftCode, replies, addLineComment, removeLineComment],
+    [lineComments, openDraftKey, draftBody, draftCode, replies, addLineComment, removeLineComment, addReply],
   )
 
   const handleSubmit = async (action: DecisionAction) => {

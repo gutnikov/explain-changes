@@ -45,7 +45,14 @@ async function main() {
   const newReplies = parseArgJson(arg("replies", ""), {})
   const newSeen = parseArgJson(arg("seen", ""), [])
 
-  const mergedReplies = { ...safeExistingReplies, ...newReplies }
+  // Replies are keyed by threadId and hold an ordered array of agent answers, so
+  // a new answer in an existing thread appends rather than overwrites.
+  const mergedReplies = { ...safeExistingReplies }
+  for (const [threadId, answers] of Object.entries(newReplies)) {
+    const prev = Array.isArray(mergedReplies[threadId]) ? mergedReplies[threadId] : []
+    const next = Array.isArray(answers) ? answers : [answers]
+    mergedReplies[threadId] = [...prev, ...next]
+  }
   const mergedSeen = Array.from(new Set([...safeExistingSeen, ...newSeen]))
 
   await writeFile(repliesFile, JSON.stringify(mergedReplies), "utf8")

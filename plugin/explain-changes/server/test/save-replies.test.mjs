@@ -15,24 +15,25 @@ async function readJson(file) {
   return JSON.parse(await readFile(file, "utf8"))
 }
 
-test("creates replies.json and seen.json when absent", async () => {
+test("creates replies.json (thread arrays) and seen.json when absent", async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "ec-rep-"))
   await run("node", [script, "--session-dir", dir,
-    "--replies", JSON.stringify({ c1: { body: "answer", ts: 1 } }),
-    "--seen", JSON.stringify(["c1"])])
-  assert.deepEqual(await readJson(path.join(dir, "replies.json")), { c1: { body: "answer", ts: 1 } })
-  assert.deepEqual(await readJson(path.join(dir, "seen.json")), ["c1"])
+    "--replies", JSON.stringify({ t1: [{ body: "answer", ts: 1 }] }),
+    "--seen", JSON.stringify(["t1"])])
+  assert.deepEqual(await readJson(path.join(dir, "replies.json")), { t1: [{ body: "answer", ts: 1 }] })
+  assert.deepEqual(await readJson(path.join(dir, "seen.json")), ["t1"])
 })
 
-test("merges replies and unions seen into existing files", async () => {
+test("appends reply arrays per threadId across rounds", async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "ec-rep-"))
-  await writeFile(path.join(dir, "replies.json"), JSON.stringify({ c1: { body: "a", ts: 1 } }), "utf8")
+  await writeFile(path.join(dir, "replies.json"), JSON.stringify({ t1: [{ body: "a1", ts: 1 }] }), "utf8")
   await writeFile(path.join(dir, "seen.json"), JSON.stringify(["c1"]), "utf8")
   await run("node", [script, "--session-dir", dir,
-    "--replies", JSON.stringify({ c2: { body: "b", ts: 2 } }),
+    "--replies", JSON.stringify({ t1: [{ body: "a2", ts: 3 }], t2: [{ body: "b", ts: 2 }] }),
     "--seen", JSON.stringify(["c1", "c2"])])
   assert.deepEqual(await readJson(path.join(dir, "replies.json")), {
-    c1: { body: "a", ts: 1 }, c2: { body: "b", ts: 2 },
+    t1: [{ body: "a1", ts: 1 }, { body: "a2", ts: 3 }],
+    t2: [{ body: "b", ts: 2 }],
   })
   assert.deepEqual((await readJson(path.join(dir, "seen.json"))).sort(), ["c1", "c2"])
 })
@@ -42,10 +43,10 @@ test("survives malformed existing files by treating them as empty", async () => 
   await writeFile(path.join(dir, "replies.json"), "not json", "utf8")
   await writeFile(path.join(dir, "seen.json"), "not json", "utf8")
   await run("node", [script, "--session-dir", dir,
-    "--replies", JSON.stringify({ c1: { body: "x", ts: 1 } }),
-    "--seen", JSON.stringify(["c1"])])
-  assert.deepEqual(await readJson(path.join(dir, "replies.json")), { c1: { body: "x", ts: 1 } })
-  assert.deepEqual(await readJson(path.join(dir, "seen.json")), ["c1"])
+    "--replies", JSON.stringify({ t1: [{ body: "x", ts: 1 }] }),
+    "--seen", JSON.stringify(["t1"])])
+  assert.deepEqual(await readJson(path.join(dir, "replies.json")), { t1: [{ body: "x", ts: 1 }] })
+  assert.deepEqual(await readJson(path.join(dir, "seen.json")), ["t1"])
 })
 
 test("only --seen provided still works (no replies arg)", async () => {
