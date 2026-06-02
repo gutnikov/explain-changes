@@ -12,6 +12,7 @@ import {
 } from "@/lib/api"
 import { ReviewLayout } from "@/components/review/ReviewLayout"
 import { CheckpointSelect } from "@/components/review/CheckpointSelect"
+import { ThemeToggle } from "@/components/ThemeToggle"
 
 export function ReviewScreen() {
   const [payload, setPayload] = useState<Payload | null>(null)
@@ -96,9 +97,12 @@ export function ReviewScreen() {
             <h1 className="text-[15px] font-semibold tracking-tight">Code review</h1>
             <div className="mt-2">{selector}</div>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--subtle)] px-2.5 py-1 text-[11px] text-[var(--fg-muted)]">
-            Read-only
-          </span>
+          <div className="shrink-0 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--subtle)] px-2.5 py-1 text-[11px] text-[var(--fg-muted)]">
+              Read-only
+            </span>
+            <ThemeToggle />
+          </div>
         </header>
         <div className="rounded-lg border border-border bg-card px-4 py-6 text-center text-sm text-[var(--danger)]">
           Couldn't load this checkpoint. Pick another, or switch back to Current changes.

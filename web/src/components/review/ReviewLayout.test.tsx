@@ -67,4 +67,12 @@ describe("ReviewLayout read-only checkpoints", () => {
     expect(screen.getByRole("button", { name: /commit & proceed/i })).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/leave a general comment/i)).toBeInTheDocument()
   })
+
+  it("shows the theme toggle in both interactive and read-only modes", () => {
+    const { unmount } = render(<ReviewLayout payload={cpPayload} onSubmit={vi.fn()} />)
+    expect(screen.getByLabelText("toggle theme")).toBeInTheDocument()
+    unmount()
+    render(<ReviewLayout payload={cpPayload} onSubmit={vi.fn()} readOnly />)
+    expect(screen.getByLabelText("toggle theme")).toBeInTheDocument()
+  })
 })

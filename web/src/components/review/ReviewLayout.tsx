@@ -5,6 +5,7 @@ import type { Payload, DecisionAction, LineComment } from "@/lib/api"
 import { postComment } from "@/lib/api"
 import { useReplies } from "@/lib/useReplies"
 import { ActionButton } from "./ActionButton"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { DiffFileCard } from "./DiffFileCard"
 import { FileTreeSidebar } from "./FileTreeSidebar"
 import type { FileChange, ReviewComment, ThreadMessage } from "./types"
@@ -226,7 +227,7 @@ export function ReviewLayout({ payload, onSubmit, readOnly = false, readOnlyLabe
               </div>
               {checkpointSlot ? <div className="mt-2">{checkpointSlot}</div> : null}
             </div>
-            <div className="shrink-0">
+            <div className="shrink-0 flex items-center gap-2">
               {readOnly ? (
                 <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--subtle)] px-2.5 py-1 text-[11px] text-[var(--fg-muted)]">
                   Read-only{readOnlyLabel ? ` — ${readOnlyLabel}` : ""}
@@ -234,6 +235,7 @@ export function ReviewLayout({ payload, onSubmit, readOnly = false, readOnlyLabe
               ) : (
                 <ActionButton hasComments={hasComments} onSubmit={handleSubmit} disabled={submitting} />
               )}
+              <ThemeToggle />
             </div>
           </div>
         </header>
